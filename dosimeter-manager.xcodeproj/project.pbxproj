@@ -15,6 +15,8 @@
 		8468D8AC1F10066D00B6F7A6 /* dosimeter_managerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D8AB1F10066D00B6F7A6 /* dosimeter_managerTests.swift */; };
 		8468D8B71F10066D00B6F7A6 /* dosimeter_managerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D8B61F10066D00B6F7A6 /* dosimeter_managerUITests.swift */; };
 		8468D9011F140D0E00B6F7A6 /* BarcodeReaderVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D9001F140D0E00B6F7A6 /* BarcodeReaderVC.swift */; };
+		84D1CB351F16E1A6003A0650 /* DataDisplayVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D1CB341F16E1A6003A0650 /* DataDisplayVC.swift */; };
+		84D1CB751F16E4C7003A0650 /* dosimeter-manager.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 84D1CB731F16E4C7003A0650 /* dosimeter-manager.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +51,8 @@
 		8468D8B61F10066D00B6F7A6 /* dosimeter_managerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = dosimeter_managerUITests.swift; sourceTree = "<group>"; };
 		8468D8B81F10066D00B6F7A6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8468D9001F140D0E00B6F7A6 /* BarcodeReaderVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BarcodeReaderVC.swift; sourceTree = "<group>"; };
+		84D1CB341F16E1A6003A0650 /* DataDisplayVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataDisplayVC.swift; sourceTree = "<group>"; };
+		84D1CB741F16E4C7003A0650 /* dosimeter-manager.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "dosimeter-manager.xcdatamodel"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,10 +106,12 @@
 				8468D8961F10066D00B6F7A6 /* AppDelegate.swift */,
 				8468D8981F10066D00B6F7A6 /* StartUpVC.swift */,
 				8468D9001F140D0E00B6F7A6 /* BarcodeReaderVC.swift */,
+				84D1CB341F16E1A6003A0650 /* DataDisplayVC.swift */,
 				8468D89A1F10066D00B6F7A6 /* Main.storyboard */,
 				8468D89D1F10066D00B6F7A6 /* Assets.xcassets */,
 				8468D89F1F10066D00B6F7A6 /* LaunchScreen.storyboard */,
 				8468D8A21F10066D00B6F7A6 /* Info.plist */,
+				84D1CB731F16E4C7003A0650 /* dosimeter-manager.xcdatamodeld */,
 			);
 			path = "dosimeter-manager";
 			sourceTree = "<group>";
@@ -267,7 +273,9 @@
 			files = (
 				8468D8991F10066D00B6F7A6 /* StartUpVC.swift in Sources */,
 				8468D9011F140D0E00B6F7A6 /* BarcodeReaderVC.swift in Sources */,
+				84D1CB751F16E4C7003A0650 /* dosimeter-manager.xcdatamodeld in Sources */,
 				8468D8971F10066D00B6F7A6 /* AppDelegate.swift in Sources */,
+				84D1CB351F16E1A6003A0650 /* DataDisplayVC.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -541,6 +549,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		84D1CB731F16E4C7003A0650 /* dosimeter-manager.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				84D1CB741F16E4C7003A0650 /* dosimeter-manager.xcdatamodel */,
+			);
+			currentVersion = 84D1CB741F16E4C7003A0650 /* dosimeter-manager.xcdatamodel */;
+			path = "dosimeter-manager.xcdatamodeld";
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 8468D88B1F10066D00B6F7A6 /* Project object */;
 }

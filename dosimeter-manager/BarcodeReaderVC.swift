@@ -16,6 +16,7 @@ class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
     var videoPreviewLayer: AVCaptureVideoPreviewLayer?
     var captureSessionPaused: Bool = false
     var currentMode: ReaderMode = .verify
+    var scannedBarcode: String?
     
     enum ReaderMode {
         case verify
@@ -62,6 +63,15 @@ class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
         // Dispose of any resources that can be recreated.
     }
 
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if (segue.identifier == "BarcodeRead") {
+            guard let destinationController = segue.destination as? DataDisplayVC else {
+                return
+            }
+            destinationController.propertyFilter = self.scannedBarcode
+        }
+    }
+    
     /*
     // MARK: - Navigation
 
@@ -114,20 +124,23 @@ class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
         if (metadataObj.type == AVMetadataObjectTypeDataMatrixCode ||
             metadataObj.type == AVMetadataObjectTypeCode128Code) {
             self.pauseCaptureSession()
+            self.scannedBarcode = metadataObj.stringValue
             if (self.currentMode == .verify) {
-                verifyBarcode(barcode: metadataObj.stringValue)
+                verifyBarcode()
             }
         }
     }
     
-    func verifyBarcode(barcode: String?) {
+    func verifyBarcode() {
         // This should eventually do a database lookup that determines if the
         // barcode is already in the database.
-        let alert = UIAlertController(title: "Barcode Found", message: "\(barcode!) was found in the database.",
-            preferredStyle: UIAlertControllerStyle.alert)
-        alert.addAction(UIAlertAction(title: "Confirm", style: UIAlertActionStyle.default, handler: confirmScan))
-        alert.addAction(UIAlertAction(title: "Redo Scan", style: UIAlertActionStyle.default, handler: redoScan))
-        self.present(alert, animated: true, completion: nil)
+        //let alert = UIAlertController(title: "Barcode Found", message: "\(self.scannedBarcode!) was found in the database.",
+        //    preferredStyle: UIAlertControllerStyle.alert)
+        //alert.addAction(UIAlertAction(title: "Confirm", style: UIAlertActionStyle.default, handler: confirmScan))
+        //alert.addAction(UIAlertAction(title: "Redo Scan", style: UIAlertActionStyle.default, handler: redoScan))
+        //self.present(alert, animated: true, completion: nil)
+        print("Read barcode")
+        performSegue(withIdentifier: "BarcodeRead", sender: self)
     }
     
     func confirmScan(_: UIAlertAction) -> Void {

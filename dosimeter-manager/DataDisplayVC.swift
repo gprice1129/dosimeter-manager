@@ -65,22 +65,22 @@ class DataDisplayVC: UIViewController {
         // Right now this dumps coredata for testing purposes
         super.viewWillDisappear(animated)
         
-//        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
-//            return
-//        }
-//
-//        let managedContext = appDelegate.persistentContainer.viewContext
-//
-//        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: EntityNames.areaMonitor.rawValue)
-//        let request = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-//
-//        do {
-//            try managedContext.execute(request)
-//            try managedContext.save()
-//            self.dosimeters = []
-//        } catch {
-//            print("Error deleting core data")
-//        }
+/*        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+            return
+        }
+
+        let managedContext = appDelegate.persistentContainer.viewContext
+
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: EntityNames.areaMonitor.rawValue)
+        let request = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+
+        do {
+            try managedContext.execute(request)
+            try managedContext.save()
+            self.dosimeters = []
+        } catch {
+            print("Error deleting core data")
+        } */
     }
     
     override func didReceiveMemoryWarning() {
@@ -149,7 +149,10 @@ class DataDisplayVC: UIViewController {
         var entity: [String: String] = [:]
         let format: [Int: String] = getFormat(formatLine: oldData[0])
         for line in oldData.dropFirst() {
-            let splitLine: [String] = line.components(separatedBy: ",")
+            guard let splitLine: [String] = self.split(line: line) else {
+                print("Malformed CSV file, no closing \" found")
+                return false
+            }
             for key in format.keys {
                 if (key >= splitLine.count) {
                     continue
@@ -159,6 +162,33 @@ class DataDisplayVC: UIViewController {
             self.saveData(entity: entity)
         }
         return true
+    }
+    
+    func split(line: String) -> [String]? {
+        var splitLine: [String]? = []
+        var temp: String = ""
+        var inQuotedSection: Bool = false
+        for char in line.characters {
+            switch(char) {
+            case ",":
+                if (inQuotedSection) {
+                    temp.append(char)
+                }
+                else {
+                    splitLine!.append(temp)
+                    temp = ""
+                }
+            case "\"":
+                inQuotedSection = !inQuotedSection
+            default:
+                temp.append(char)
+            }
+        }
+        if (inQuotedSection) {
+            return nil
+        }
+        splitLine!.append(temp)
+        return splitLine
     }
     
     func saveData(entity: [String: String]) {
@@ -283,7 +313,7 @@ extension DataDisplayVC: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let dosimeter = self.dosimeters[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = dosimeter.value(forKeyPath: DataProperty.location.rawValue) as? String
+        cell.textLabel?.text = dosimeter.value(forKeyPath: DataProperty.oldCode.rawValue) as? String
         return cell
     }
 }

@@ -8,10 +8,13 @@
 
 import UIKit
 import AVFoundation
+import CoreData
 
-class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
 
     @IBOutlet weak var messageLabel: UILabel!
+    @IBOutlet weak var whatsLeftButton: UIButton!
+    var session: Session?
     var captureSession: AVCaptureSession?
     var videoPreviewLayer: AVCaptureVideoPreviewLayer?
     var captureSessionPaused: Bool = false
@@ -22,9 +25,13 @@ class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
         case verify
     }
     
+    struct Segues {
+        static let readerToDisplay: String = "ReaderToDisplay"
+        static let readerToMonitor: String = "ReaderToMonitor"
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("Hello from viewDidLoad")
         do {
             if (captureSession == nil) {
                 print("Setting up capture session")
@@ -34,6 +41,7 @@ class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
                 videoPreviewLayer?.frame = view.layer.bounds
                 view.layer.addSublayer(videoPreviewLayer!)
                 view.bringSubview(toFront: messageLabel)
+                view.bringSubview(toFront: whatsLeftButton)
             }
         }
 
@@ -48,13 +56,12 @@ class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        print("Hello from viewWillAppear")
+        self.captureSessionPaused = false
         captureSession?.startRunning()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        print("Hello from viewWillDisappear")
         captureSession?.stopRunning()
     }
     
@@ -62,25 +69,27 @@ class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if (segue.identifier == "BarcodeRead") {
-            guard let destinationController = segue.destination as? DataDisplayVC else {
+        guard let identifer = segue.identifier else {
+            return
+        }
+        switch (identifer) {
+        case Segues.readerToDisplay:
+            guard let destinationController = segue.destination as? SessionDisplayVC else {
                 return
             }
-            destinationController.propertyFilter = self.scannedBarcode
+            destinationController.session = self.session
+        case Segues.readerToMonitor:
+            guard let destinationController = segue.destination as? MonitorDisplayVC,
+                 let areaMonitor = sender as? NSManagedObject else {
+                return
+            }
+            destinationController.areaMonitor = areaMonitor
+        default:
+            return
         }
     }
-    
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
     
     func setupCaptureSession() throws {
         // Attempts to setup the capture session and settings
@@ -132,24 +141,26 @@ class BarcodeReaderVC: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
     }
     
     func verifyBarcode() {
-        // This should eventually do a database lookup that determines if the
-        // barcode is already in the database.
-        //let alert = UIAlertController(title: "Barcode Found", message: "\(self.scannedBarcode!) was found in the database.",
-        //    preferredStyle: UIAlertControllerStyle.alert)
-        //alert.addAction(UIAlertAction(title: "Confirm", style: UIAlertActionStyle.default, handler: confirmScan))
-        //alert.addAction(UIAlertAction(title: "Redo Scan", style: UIAlertActionStyle.default, handler: redoScan))
-        //self.present(alert, animated: true, completion: nil)
-        print("Read barcode")
-        performSegue(withIdentifier: "BarcodeRead", sender: self)
+        do {
+            let areaMonitors: [NSManagedObject] = try query(withKey: DataProperty.oldCode, withValue: self.scannedBarcode)
+            if(areaMonitors.count > 1) {
+                print("Conflict: Two identical barcodes found in the system")
+                return
+            }
+            if(areaMonitors.count < 1) {
+                print("Error: No areamonitor found with the scanned barcode")
+                return
+            }
+            performSegue(withIdentifier: Segues.readerToMonitor, sender: areaMonitors[0])
+        } catch {
+            print("Error: Query to database was unsuccessful")
+            return
+        }
     }
     
-    func confirmScan(_: UIAlertAction) -> Void {
-        self.messageLabel.text = "Barcode scanned successfully"
-        self.unpauseCaptureSession()
+    @IBAction func didPressWhatsLeftButton(_ sender: Any) {
+        performSegue(withIdentifier: Segues.readerToDisplay, sender: self)
     }
     
-    func redoScan(_: UIAlertAction) -> Void {
-        self.messageLabel.text = "Please redo the barcode scan"
-        self.unpauseCaptureSession()
-    }
+
 }

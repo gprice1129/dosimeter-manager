@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class DataDisplayVC: UIViewController {
+class DataDisplayVC: QueryVC {
 
     @IBOutlet weak var userUpdateLabel: UILabel!
     @IBOutlet weak var dosimeterDisplay: UITableView!
@@ -20,19 +20,6 @@ class DataDisplayVC: UIViewController {
     var dosimeters: [NSManagedObject] = []
     var propertyFilter: String?
     
-    enum EntityNames: String {
-        case areaMonitor = "AreaMonitor"
-    }
-    
-    enum DataProperty: String {
-        case facility = "facility"
-        case location = "location"
-        case newCode = "newCode"
-        case oldCode = "oldCode"
-        case pickupDate = "pickupDate"
-        case placementDate = "placementDate"
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         dosimeterDisplay.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
@@ -41,21 +28,8 @@ class DataDisplayVC: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         // Attempt to load core data on startup
         super.viewWillAppear(animated)
-        
-        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
-            return
-        }
-        
-        let managedContext = appDelegate.persistentContainer.viewContext
-        
-        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: EntityNames.areaMonitor.rawValue)
-        
         do {
-            if let filter = self.propertyFilter {
-                fetchRequest.predicate = NSPredicate(format: "%K like %@", DataProperty.oldCode.rawValue, filter)
-            }
-            self.dosimeters = try managedContext.fetch(fetchRequest)
-            
+            self.dosimeters = try query(withKey: DataProperty.oldCode, withValue: propertyFilter)
         } catch {
             self.updateUser(userUpdate: "Could not fetch from database")
         }
@@ -64,23 +38,6 @@ class DataDisplayVC: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         // Right now this dumps coredata for testing purposes
         super.viewWillDisappear(animated)
-        
-/*        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
-            return
-        }
-
-        let managedContext = appDelegate.persistentContainer.viewContext
-
-        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: EntityNames.areaMonitor.rawValue)
-        let request = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-
-        do {
-            try managedContext.execute(request)
-            try managedContext.save()
-            self.dosimeters = []
-        } catch {
-            print("Error deleting core data")
-        } */
     }
     
     override func didReceiveMemoryWarning() {
@@ -132,6 +89,27 @@ class DataDisplayVC: UIViewController {
         } catch {
             self.updateUser(userUpdate: "Error deleteing file")
         }
+        purgeCoreData()
+        self.dosimeterDisplay.reloadData()
+    }
+    
+    func purgeCoreData() {
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+            return
+        }
+        
+        let managedContext = appDelegate.persistentContainer.viewContext
+        
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: EntityNames.areaMonitor)
+        let request = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        
+        do {
+            try managedContext.execute(request)
+            try managedContext.save()
+            self.dosimeters = []
+        } catch {
+            print("Error deleting core data")
+        }
     }
     
     func generateCoreData() -> Bool {
@@ -147,52 +125,28 @@ class DataDisplayVC: UIViewController {
             return false
         }
         var entity: [String: String] = [:]
-        let format: [Int: String] = getFormat(formatLine: oldData[0])
+        let formatMapping: [Int: String] = getFormat(formatLine: oldData[0])
         for line in oldData.dropFirst() {
-            guard let splitLine: [String] = self.split(line: line) else {
+            guard let formatLine: [String] = format(line: line) else {
                 print("Malformed CSV file, no closing \" found")
                 return false
             }
-            for key in format.keys {
-                if (key >= splitLine.count) {
+            for key in formatMapping.keys {
+                if (key >= formatLine.count) {
                     continue
                 }
-                entity[format[key]!] = splitLine[key]
+                entity[formatMapping[key]!] = formatLine[key]
+            }
+            if let facilityNumber = formatLine.last {
+                entity[DataProperty.facilityNumber] = facilityNumber
             }
             self.saveData(entity: entity)
         }
         return true
     }
     
-    func split(line: String) -> [String]? {
-        var splitLine: [String]? = []
-        var temp: String = ""
-        var inQuotedSection: Bool = false
-        for char in line.characters {
-            switch(char) {
-            case ",":
-                if (inQuotedSection) {
-                    temp.append(char)
-                }
-                else {
-                    splitLine!.append(temp)
-                    temp = ""
-                }
-            case "\"":
-                inQuotedSection = !inQuotedSection
-            default:
-                temp.append(char)
-            }
-        }
-        if (inQuotedSection) {
-            return nil
-        }
-        splitLine!.append(temp)
-        return splitLine
-    }
-    
     func saveData(entity: [String: String]) {
-        // Attempts to write a single value and key to code data
+        // Attempts to write a single value and key to core data
         //
         // :propertyValue: The value of the property you want to save
         // :propertyKey: The key of the property you want to save
@@ -205,12 +159,12 @@ class DataDisplayVC: UIViewController {
             return
         }
         let managedContext = appDelegate.persistentContainer.viewContext
-        let coreDataEntity = NSEntityDescription.entity(forEntityName: EntityNames.areaMonitor.rawValue, in: managedContext)!
+        let coreDataEntity = NSEntityDescription.entity(forEntityName: EntityNames.areaMonitor, in: managedContext)!
         let areaMonitor = NSManagedObject(entity: coreDataEntity, insertInto: managedContext)
 
         for (propertyKey, propertyValue) in entity {
             var value: Any? = propertyValue
-            if (propertyKey == DataProperty.pickupDate.rawValue || propertyKey == DataProperty.placementDate.rawValue) {
+            if (propertyKey == DataProperty.pickupDate || propertyKey == DataProperty.placementDate) {
                 let dateFormatter = DateFormatter()
                 dateFormatter.locale = Locale(identifier: "en_US")
                 dateFormatter.setLocalizedDateFormatFromTemplate("dd-MMM-yy")
@@ -225,7 +179,6 @@ class DataDisplayVC: UIViewController {
             print("Could not save. \(error), \(error.userInfo)")
         }
     }
-
     
     func readOldData() -> [String]? {
         // Attemps to read the old csv file at the location specified in the member variables
@@ -252,19 +205,19 @@ class DataDisplayVC: UIViewController {
         // :returns: A dictionary of column positions to property names
         
         var format: [Int: String] = [:]
-        let fields: [String: DataProperty] = ["name": DataProperty.facility,
-                                        "description": DataProperty.location,
-                                        "placement date": DataProperty.placementDate,
-                                        "pick up date": DataProperty.pickupDate,
-                                        "old inlight": DataProperty.oldCode,
-                                        "new inlight": DataProperty.newCode]
+        let fields: [String: String] = ["name": DataProperty.facility,
+                                     "description": DataProperty.location,
+                                     "placement date": DataProperty.placementDate,
+                                     "pick up date": DataProperty.pickupDate,
+                                     "old inlight": DataProperty.oldCode,
+                                     "new inlight": DataProperty.newCode]
         
         for (i, word) in formatLine.components(separatedBy: ",").enumerated() {
             let word = word.lowercased().trimmingCharacters(in: .whitespaces)
             guard let field = fields[word] else {
                 continue
             }
-            format[i] = field.rawValue
+            format[i] = field
         }
         return format
     }
@@ -292,17 +245,6 @@ class DataDisplayVC: UIViewController {
             self.updateUser(userUpdate: "There was an error while loading the data")
         }
     }
-    
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }
 
 extension DataDisplayVC: UITableViewDataSource {
@@ -313,7 +255,8 @@ extension DataDisplayVC: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let dosimeter = self.dosimeters[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = dosimeter.value(forKeyPath: DataProperty.oldCode.rawValue) as? String
+        let facility: String = dosimeter.value(forKeyPath: DataProperty.facility) as? String ?? "None"
+        cell.textLabel?.text = "\(facility)"
         return cell
     }
 }

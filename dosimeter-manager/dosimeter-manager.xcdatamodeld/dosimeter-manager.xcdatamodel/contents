@@ -2,6 +2,7 @@
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="12141" systemVersion="16A323" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="AreaMonitor" representedClassName="AreaMonitor" syncable="YES" codeGenerationType="class">
         <attribute name="facility" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="facilityNumber" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="location" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="newCode" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="oldCode" optional="YES" attributeType="String" syncable="YES"/>
@@ -9,6 +10,6 @@
         <attribute name="placementDate" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
     </entity>
     <elements>
-        <element name="AreaMonitor" positionX="-63" positionY="-18" width="128" height="135"/>
+        <element name="AreaMonitor" positionX="-63" positionY="-18" width="128" height="150"/>
     </elements>
 </model>

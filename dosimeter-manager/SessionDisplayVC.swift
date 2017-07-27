@@ -62,6 +62,10 @@ class SessionDisplayVC: QueryVC {
             destinationController.areaMonitor = areaMonitor
         }
     }
+    
+    @IBAction func didPressGoBackUnwind(sender: UIStoryboardSegue) {
+        return
+    }
 }
 
 extension SessionDisplayVC: UITableViewDataSource {

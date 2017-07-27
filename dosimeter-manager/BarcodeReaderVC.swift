@@ -252,6 +252,11 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
     @IBAction func didPressFlagUnwind(sender: UIStoryboardSegue) {
         setReplaceMode(sender: sender)
         // TODO: Set flagged status for areamonitor
+        guard let areaMonitor = self.areaMonitor else {
+            print("Error: no active area monitor found")
+            return
+        }
+        areaMonitor.setValue(Status.flagged, forKey: DataProperty.status)
         self.unpauseCaptureSession()
     }
     
@@ -262,11 +267,17 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         }
         do {
             let areaMonitor = self.areaMonitor!
+            guard let currentStatus = areaMonitor.value(forKey: DataProperty.status) as? String else {
+                print("No status for areamonitor")
+                return
+            }
             let scannedBarcode = sourceController.scannedBarcode
             let currentDate = sourceController.currentDate!
             areaMonitor.setValue(scannedBarcode, forKey: DataProperty.newCode)
             areaMonitor.setValue(currentDate, forKey: DataProperty.pickupDate)
-            areaMonitor.setValue(Status.recovered, forKey: DataProperty.status)
+            if (currentStatus == Status.unrecovered) {
+                areaMonitor.setValue(Status.recovered, forKey: DataProperty.status)
+            }
             try areaMonitor.managedObjectContext?.save()
             self.currentMode = .verify
             self.messageLabel.text = Messages.verifyMessage

@@ -212,8 +212,7 @@ class DataDisplayVC: QueryVC {
                                      "description": DataProperty.location,
                                      "placement date": DataProperty.placementDate,
                                      "pickup date": DataProperty.pickupDate,
-                                     "old inlight": DataProperty.oldCode,
-                                     "new inlight": DataProperty.newCode]
+                                     "new inlight": DataProperty.oldCode]
         
         for (i, word) in formatLine.components(separatedBy: ",").enumerated() {
             let word = word.lowercased().trimmingCharacters(in: .whitespaces)

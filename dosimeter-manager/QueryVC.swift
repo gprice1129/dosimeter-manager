@@ -29,7 +29,7 @@ class QueryVC: UIViewController {
     struct Status {
         static let unrecovered: String = "Needs replacing"
         static let recovered: String = "Replaced"
-        static let conflict: String = "Flagged as incorrect"
+        static let flagged: String = "Needs investigation"
         static let retired: String = "Retired"
     }
     

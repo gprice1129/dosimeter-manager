@@ -13,12 +13,14 @@ class MonitorExchangeVC: MonitorDisplayVC {
     @IBOutlet weak var location: UILabel!
     @IBOutlet weak var date: UILabel!
     @IBOutlet weak var newCode: UILabel!
+    @IBOutlet weak var status: UILabel!
     var scannedBarcode: String = ""
     var currentDate: Date? = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupLabels(labelProperties: [DataProperty.facility: facility, DataProperty.location: location])
+        setupLabels(labelProperties: [DataProperty.facility: facility, DataProperty.location: location,
+                                    DataProperty.status: status])
         self.currentDate = Date()
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US")

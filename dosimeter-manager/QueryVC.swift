@@ -23,6 +23,14 @@ class QueryVC: UIViewController {
         static let oldCode = "oldCode"
         static let pickupDate = "pickupDate"
         static let placementDate = "placementDate"
+        static let status = "status"
+    }
+    
+    struct Status {
+        static let unrecovered: String = "Needs replacing"
+        static let recovered: String = "Replaced"
+        static let conflict: String = "Flagged as incorrect"
+        static let retired: String = "Retired"
     }
     
     enum QueryError: Error {

@@ -24,7 +24,7 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
         static let facilityNumber: Int = 1
     }
     
-    struct segues {
+    struct Segues {
         static let sessionToReader: String = "SessionToReader"
     }
     
@@ -66,7 +66,7 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if (segue.identifier == segues.sessionToReader) {
+        if (segue.identifier == Segues.sessionToReader) {
             guard let destinationController = segue.destination as? BarcodeReaderVC else {
                 return
             }
@@ -116,6 +116,6 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
         let facility: String? = self.facilities[self.selectedFacility]
         let facilityNumber: String? = self.facilityNumbers[self.selectedFacility][self.selectedFacilityNumber]
         self.session = Session(forFacility: facility, withNumber: facilityNumber)
-        performSegue(withIdentifier: segues.sessionToReader, sender: self)
+        performSegue(withIdentifier: Segues.sessionToReader, sender: self)
     }
 }

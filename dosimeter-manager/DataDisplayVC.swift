@@ -20,6 +20,8 @@ class DataDisplayVC: QueryVC {
     var dosimeters: [NSManagedObject] = []
     var propertyFilter: String?
     
+
+
     override func viewDidLoad() {
         super.viewDidLoad()
         dosimeterDisplay.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
@@ -140,6 +142,7 @@ class DataDisplayVC: QueryVC {
             if let facilityNumber = formatLine.last {
                 entity[DataProperty.facilityNumber] = facilityNumber
             }
+            entity[DataProperty.status] = Status.unrecovered
             self.saveData(entity: entity)
         }
         return true
@@ -208,7 +211,7 @@ class DataDisplayVC: QueryVC {
         let fields: [String: String] = ["name": DataProperty.facility,
                                      "description": DataProperty.location,
                                      "placement date": DataProperty.placementDate,
-                                     "pick up date": DataProperty.pickupDate,
+                                     "pickup date": DataProperty.pickupDate,
                                      "old inlight": DataProperty.oldCode,
                                      "new inlight": DataProperty.newCode]
         
@@ -255,7 +258,7 @@ extension DataDisplayVC: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let dosimeter = self.dosimeters[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let facility: String = dosimeter.value(forKeyPath: DataProperty.facility) as? String ?? "None"
+        let facility: String = dosimeter.value(forKeyPath: DataProperty.oldCode) as? String ?? "None"
         cell.textLabel?.text = "\(facility)"
         return cell
     }

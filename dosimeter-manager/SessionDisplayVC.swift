@@ -16,7 +16,7 @@ class SessionDisplayVC: QueryVC {
     var areaMonitors: [NSManagedObject] = []
     
     struct Segues {
-        static let sessionToMonitor = "SessionToMonitor"
+        static let listToInfo = "ListToInfo"
     }
     
     override func viewDidLoad() {
@@ -51,8 +51,8 @@ class SessionDisplayVC: QueryVC {
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if (segue.identifier == Segues.sessionToMonitor) {
-            guard let destinationController = segue.destination as? MonitorDisplayVC else {
+        if (segue.identifier == Segues.listToInfo) {
+            guard let destinationController = segue.destination as? MonitorInfoVC else {
                 return
             }
             guard let areaMonitor = sender as? NSManagedObject else {
@@ -83,6 +83,6 @@ extension SessionDisplayVC: UITableViewDataSource {
 extension SessionDisplayVC: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let areaMonitor = self.areaMonitors[indexPath.row]
-        performSegue(withIdentifier: Segues.sessionToMonitor, sender: areaMonitor)
+        performSegue(withIdentifier: Segues.listToInfo, sender: areaMonitor)
     }
 }

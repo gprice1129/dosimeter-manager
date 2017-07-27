@@ -20,14 +20,22 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
     var captureSessionPaused: Bool = false
     var currentMode: ReaderMode = .verify
     var scannedBarcode: String?
+    var areaMonitor: NSManagedObject?
     
     enum ReaderMode {
         case verify
+        case replace
+    }
+    
+    struct Messages {
+        static let verifyMessage: String = "Please scan old barcode"
+        static let replaceMessage: String = "Please scan new barcode"
     }
     
     struct Segues {
-        static let readerToDisplay: String = "ReaderToDisplay"
-        static let readerToMonitor: String = "ReaderToMonitor"
+        static let readerToList: String = "ReaderToList"
+        static let readerToVerify: String = "ReaderToVerify"
+        static let readerToExchange: String = "ReaderToExchange"
     }
     
     override func viewDidLoad() {
@@ -35,6 +43,10 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         do {
             if (captureSession == nil) {
                 print("Setting up capture session")
+                NotificationCenter.default.addObserver(self,
+                                               selector: #selector(BarcodeReaderVC.formatNotification),
+                                               name: NSNotification.Name.AVCaptureInputPortFormatDescriptionDidChange,
+                                               object: nil)
                 try setupCaptureSession()
                 videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
                 videoPreviewLayer?.videoGravity = AVLayerVideoGravityResizeAspectFill
@@ -57,6 +69,12 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.captureSessionPaused = false
+        switch(self.currentMode) {
+        case .verify:
+            self.messageLabel.text = Messages.verifyMessage
+        case .replace:
+            self.messageLabel.text = Messages.replaceMessage
+        }
         captureSession?.startRunning()
     }
 
@@ -75,17 +93,23 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
             return
         }
         switch (identifer) {
-        case Segues.readerToDisplay:
+        case Segues.readerToList:
             guard let destinationController = segue.destination as? SessionDisplayVC else {
                 return
             }
             destinationController.session = self.session
-        case Segues.readerToMonitor:
-            guard let destinationController = segue.destination as? MonitorDisplayVC,
+        case Segues.readerToVerify:
+            guard let destinationController = segue.destination as? MonitorVerifyVC,
                  let areaMonitor = sender as? NSManagedObject else {
                 return
             }
             destinationController.areaMonitor = areaMonitor
+        case Segues.readerToExchange:
+            guard let destinationController = segue.destination as? MonitorExchangeVC else {
+                return
+            }
+            destinationController.scannedBarcode = self.scannedBarcode!
+            destinationController.areaMonitor = self.areaMonitor!
         default:
             return
         }
@@ -114,6 +138,28 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         
     }
     
+    func formatNotification() {
+        guard let output = captureSession?.outputs[0] as? AVCaptureMetadataOutput else {
+            print("Output capture session is incorrect")
+            return
+        }
+        guard let videoPreviewLayer = self.videoPreviewLayer else {
+            print("Video preview layer is not accessible")
+            return
+        }
+        let scanRect = CGRect(x: self.view.frame.width / CGFloat(6),
+                            y: self.view.frame.height / CGFloat(3),
+                            width: self.view.frame.width / CGFloat(1.5),
+                            height: 80)
+        output.rectOfInterest = videoPreviewLayer.metadataOutputRectOfInterest(for: scanRect)
+        let scanView = UIView()
+        scanView.layer.borderColor = UIColor.green.cgColor
+        scanView.layer.borderWidth = 2
+        scanView.frame = scanRect
+        view.addSubview(scanView)
+        view.bringSubview(toFront: scanView)
+    }
+    
     func pauseCaptureSession() {
         self.captureSessionPaused = true
     }
@@ -122,8 +168,14 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         self.captureSessionPaused = false
     }
     
-    func captureOutput(_ captureOutput: AVCaptureOutput!, didOutputMetadataObjects metadataObjects: [Any]!, from connection: AVCaptureConnection!) {
+    func captureOutput(_ captureOutput: AVCaptureOutput!,
+                      didOutputMetadataObjects metadataObjects: [Any]!,
+                      from connection: AVCaptureConnection!) {
         // Handles what should be done when a barcode is read
+        
+        if (self.captureSessionPaused) {
+            return
+        }
         
         if (metadataObjects == nil || metadataObjects.count == 0) {
             messageLabel.text = "No barcode is detected"
@@ -134,8 +186,11 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
             metadataObj.type == AVMetadataObjectTypeCode128Code) {
             self.pauseCaptureSession()
             self.scannedBarcode = metadataObj.stringValue
-            if (self.currentMode == .verify) {
+            switch (self.currentMode) {
+            case .verify:
                 verifyBarcode()
+            case .replace:
+                replaceBarcode()
             }
         }
     }
@@ -151,16 +206,74 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
                 print("Error: No areamonitor found with the scanned barcode")
                 return
             }
-            performSegue(withIdentifier: Segues.readerToMonitor, sender: areaMonitors[0])
+            let areaMonitor = areaMonitors[0]
+            if (self.session == nil) {
+                guard let facility = areaMonitor.value(forKey: DataProperty.facility) as? String,
+                     let facilityNumber = areaMonitor.value(forKey: DataProperty.facilityNumber) as? String else {
+                    return
+                }
+                self.session = Session(forFacility: facility, withNumber: facilityNumber)
+            }
+            performSegue(withIdentifier: Segues.readerToVerify, sender: areaMonitors[0])
         } catch {
             print("Error: Query to database was unsuccessful")
             return
         }
     }
-    
-    @IBAction func didPressWhatsLeftButton(_ sender: Any) {
-        performSegue(withIdentifier: Segues.readerToDisplay, sender: self)
+        
+    func replaceBarcode() {
+        guard let areaMonitor = self.areaMonitor else {
+            print("Error: No areamonitor to replace")
+            return
+        }
+        guard let _ = areaMonitor.managedObjectContext else {
+            print("Error: No managed context for areamonitor")
+            return
+        }
+        performSegue(withIdentifier: Segues.readerToExchange, sender: self)
     }
     
-
+    func setReplaceMode(sender: UIStoryboardSegue) {
+        let sourceController = sender.source as! MonitorVerifyVC
+        self.areaMonitor = sourceController.areaMonitor
+        self.currentMode = .replace
+        self.messageLabel.text = Messages.replaceMessage
+    }
+    
+    @IBAction func didPressWhatsLeftButton(_ sender: Any) {
+        performSegue(withIdentifier: Segues.readerToList, sender: self)
+    }
+    
+    @IBAction func didPressConfirmUnwind(sender: UIStoryboardSegue) {
+        setReplaceMode(sender: sender)
+        self.unpauseCaptureSession()
+    }
+    
+    @IBAction func didPressFlagUnwind(sender: UIStoryboardSegue) {
+        setReplaceMode(sender: sender)
+        // TODO: Set flagged status for areamonitor
+        self.unpauseCaptureSession()
+    }
+    
+    @IBAction func didPressCompleteUnwind(sender: UIStoryboardSegue) {
+        guard let sourceController = sender.source as? MonitorExchangeVC else {
+            print("Couldn't unwind from exchange")
+            return
+        }
+        do {
+            let areaMonitor = self.areaMonitor!
+            let scannedBarcode = sourceController.scannedBarcode
+            let currentDate = sourceController.currentDate!
+            areaMonitor.setValue(scannedBarcode, forKey: DataProperty.newCode)
+            areaMonitor.setValue(currentDate, forKey: DataProperty.pickupDate)
+            areaMonitor.setValue(Status.recovered, forKey: DataProperty.status)
+            try areaMonitor.managedObjectContext?.save()
+            self.currentMode = .verify
+            self.messageLabel.text = Messages.verifyMessage
+            self.unpauseCaptureSession()
+        } catch {
+            print("Couldn't save areamonitor exchange")
+            return
+        }
+    }
 }

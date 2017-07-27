@@ -11,6 +11,8 @@
 		842E4A761F1EC28E00F7A7B8 /* QueryVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 842E4A751F1EC28E00F7A7B8 /* QueryVC.swift */; };
 		8468D5F11F215F850067A4A2 /* MonitorDisplayVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D5F01F215F850067A4A2 /* MonitorDisplayVC.swift */; };
 		8468D5F31F2160A00067A4A2 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D5F21F2160A00067A4A2 /* Session.swift */; };
+		8468D5F51F26AE7A0067A4A2 /* MonitorInfoVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D5F41F26AE7A0067A4A2 /* MonitorInfoVC.swift */; };
+		8468D5F81F26CCCB0067A4A2 /* MonitorVerifyVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D5F71F26CCCB0067A4A2 /* MonitorVerifyVC.swift */; };
 		8468D8971F10066D00B6F7A6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D8961F10066D00B6F7A6 /* AppDelegate.swift */; };
 		8468D8991F10066D00B6F7A6 /* StartUpVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D8981F10066D00B6F7A6 /* StartUpVC.swift */; };
 		8468D89C1F10066D00B6F7A6 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8468D89A1F10066D00B6F7A6 /* Main.storyboard */; };
@@ -19,6 +21,7 @@
 		8468D8AC1F10066D00B6F7A6 /* dosimeter_managerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D8AB1F10066D00B6F7A6 /* dosimeter_managerTests.swift */; };
 		8468D8B71F10066D00B6F7A6 /* dosimeter_managerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D8B61F10066D00B6F7A6 /* dosimeter_managerUITests.swift */; };
 		8468D9011F140D0E00B6F7A6 /* BarcodeReaderVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8468D9001F140D0E00B6F7A6 /* BarcodeReaderVC.swift */; };
+		848C6AF31F2938BD00B849DF /* MonitorExchangeVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848C6AF21F2938BD00B849DF /* MonitorExchangeVC.swift */; };
 		84D1CB351F16E1A6003A0650 /* DataDisplayVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D1CB341F16E1A6003A0650 /* DataDisplayVC.swift */; };
 		84D1CB751F16E4C7003A0650 /* dosimeter-manager.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 84D1CB731F16E4C7003A0650 /* dosimeter-manager.xcdatamodeld */; };
 		84ED5B001F2041CB00ECB4EB /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84ED5AFF1F2041CB00ECB4EB /* Utility.swift */; };
@@ -48,6 +51,8 @@
 		842E4A751F1EC28E00F7A7B8 /* QueryVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QueryVC.swift; sourceTree = "<group>"; };
 		8468D5F01F215F850067A4A2 /* MonitorDisplayVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MonitorDisplayVC.swift; sourceTree = "<group>"; };
 		8468D5F21F2160A00067A4A2 /* Session.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
+		8468D5F41F26AE7A0067A4A2 /* MonitorInfoVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MonitorInfoVC.swift; sourceTree = "<group>"; };
+		8468D5F71F26CCCB0067A4A2 /* MonitorVerifyVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MonitorVerifyVC.swift; sourceTree = "<group>"; };
 		8468D8931F10066D00B6F7A6 /* dosimeter-manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "dosimeter-manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8468D8961F10066D00B6F7A6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8468D8981F10066D00B6F7A6 /* StartUpVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartUpVC.swift; sourceTree = "<group>"; };
@@ -62,6 +67,7 @@
 		8468D8B61F10066D00B6F7A6 /* dosimeter_managerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = dosimeter_managerUITests.swift; sourceTree = "<group>"; };
 		8468D8B81F10066D00B6F7A6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8468D9001F140D0E00B6F7A6 /* BarcodeReaderVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BarcodeReaderVC.swift; sourceTree = "<group>"; };
+		848C6AF21F2938BD00B849DF /* MonitorExchangeVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MonitorExchangeVC.swift; sourceTree = "<group>"; };
 		84D1CB341F16E1A6003A0650 /* DataDisplayVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataDisplayVC.swift; sourceTree = "<group>"; };
 		84D1CB741F16E4C7003A0650 /* dosimeter-manager.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "dosimeter-manager.xcdatamodel"; sourceTree = "<group>"; };
 		84ED5AFF1F2041CB00ECB4EB /* Utility.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
@@ -94,6 +100,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8468D5F61F26CC650067A4A2 /* Monitor Displays */ = {
+			isa = PBXGroup;
+			children = (
+				8468D5F41F26AE7A0067A4A2 /* MonitorInfoVC.swift */,
+				8468D5F01F215F850067A4A2 /* MonitorDisplayVC.swift */,
+				848C6AF21F2938BD00B849DF /* MonitorExchangeVC.swift */,
+				8468D5F71F26CCCB0067A4A2 /* MonitorVerifyVC.swift */,
+			);
+			name = "Monitor Displays";
+			sourceTree = "<group>";
+		};
 		8468D88A1F10066D00B6F7A6 = {
 			isa = PBXGroup;
 			children = (
@@ -117,11 +134,11 @@
 		8468D8951F10066D00B6F7A6 /* dosimeter-manager */ = {
 			isa = PBXGroup;
 			children = (
+				8468D5F61F26CC650067A4A2 /* Monitor Displays */,
 				84ED5B031F2042BA00ECB4EB /* Utility */,
 				8468D8961F10066D00B6F7A6 /* AppDelegate.swift */,
 				8468D8981F10066D00B6F7A6 /* StartUpVC.swift */,
 				84ED5B041F20446C00ECB4EB /* SessionDisplayVC.swift */,
-				8468D5F01F215F850067A4A2 /* MonitorDisplayVC.swift */,
 				842E4A711F1EBCB000F7A7B8 /* SessionController.swift */,
 				84D1CB341F16E1A6003A0650 /* DataDisplayVC.swift */,
 				8468D9001F140D0E00B6F7A6 /* BarcodeReaderVC.swift */,
@@ -300,10 +317,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				848C6AF31F2938BD00B849DF /* MonitorExchangeVC.swift in Sources */,
 				842E4A761F1EC28E00F7A7B8 /* QueryVC.swift in Sources */,
 				8468D8991F10066D00B6F7A6 /* StartUpVC.swift in Sources */,
 				84ED5B001F2041CB00ECB4EB /* Utility.swift in Sources */,
 				8468D9011F140D0E00B6F7A6 /* BarcodeReaderVC.swift in Sources */,
+				8468D5F51F26AE7A0067A4A2 /* MonitorInfoVC.swift in Sources */,
 				84D1CB751F16E4C7003A0650 /* dosimeter-manager.xcdatamodeld in Sources */,
 				84ED5B021F2042B100ECB4EB /* Constants.swift in Sources */,
 				8468D5F31F2160A00067A4A2 /* Session.swift in Sources */,
@@ -311,6 +330,7 @@
 				842E4A721F1EBCB000F7A7B8 /* SessionController.swift in Sources */,
 				8468D5F11F215F850067A4A2 /* MonitorDisplayVC.swift in Sources */,
 				84ED5B051F20446C00ECB4EB /* SessionDisplayVC.swift in Sources */,
+				8468D5F81F26CCCB0067A4A2 /* MonitorVerifyVC.swift in Sources */,
 				84D1CB351F16E1A6003A0650 /* DataDisplayVC.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

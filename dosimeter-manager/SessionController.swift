@@ -11,6 +11,8 @@ import CoreData
 
 class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
     
+    @IBOutlet weak var noDataLabel: UILabel!
+    @IBOutlet weak var button: UIButton!
     @IBOutlet weak var facilityPicker: UIPickerView!
     let pickerComponents = 2
     var session: Session?
@@ -18,6 +20,7 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
     var facilityNumbers: [[String]] = []
     var selectedFacility: Int = 0
     var selectedFacilityNumber: Int = 0
+    var noData = false
     
     struct facilityComponents {
         static let facility: Int = 0
@@ -26,6 +29,7 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
     
     struct Segues {
         static let sessionToReader: String = "SessionToReader"
+        static let sessionToMain: String = "SessionToMain"
     }
     
     override func viewDidLoad() {
@@ -36,6 +40,13 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
         }
         do {
             let areaMonitors = try query()
+            if (areaMonitors.count == 0) {
+                facilityPicker.isHidden = true
+                noDataLabel.isHidden = false
+                button.setTitle("Go Back", for: .normal)
+                self.noData = true
+                return
+            }
             var tempFacilities: Set<String> = []
             var facilityDictionary: [String: Set<String>] = [:]
             for monitor in areaMonitors {
@@ -83,6 +94,9 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
         case facilityComponents.facility:
             return facilities.count
         case facilityComponents.facilityNumber:
+            if (self.facilityNumbers.count == 0) {
+                return 0
+            }
             return self.facilityNumbers[self.selectedFacility].count
         default:
             return 0
@@ -113,9 +127,13 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
     }
         
     @IBAction func didPressSubmit(_ sender: Any) {
-        let facility: String? = self.facilities[self.selectedFacility]
-        let facilityNumber: String? = self.facilityNumbers[self.selectedFacility][self.selectedFacilityNumber]
-        self.session = Session(forFacility: facility, withNumber: facilityNumber)
-        performSegue(withIdentifier: Segues.sessionToReader, sender: self)
+        if (noData) {
+            performSegue(withIdentifier: Segues.sessionToMain, sender: self)
+        } else {
+            let facility: String? = self.facilities[self.selectedFacility]
+            let facilityNumber: String? = self.facilityNumbers[self.selectedFacility][self.selectedFacilityNumber]
+            self.session = Session(forFacility: facility, withNumber: facilityNumber)
+            performSegue(withIdentifier: Segues.sessionToReader, sender: self)
+        }
     }
 }

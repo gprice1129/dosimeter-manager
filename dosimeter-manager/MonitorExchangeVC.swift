@@ -16,22 +16,22 @@ class MonitorExchangeVC: MonitorDisplayVC {
     @IBOutlet weak var status: UILabel!
     var scannedBarcode: String = ""
     var currentDate: Date? = nil
+    var currentStatus: String = ""
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupLabels(labelProperties: [DataProperty.facility: facility, DataProperty.location: location,
-                                    DataProperty.status: status])
+        setupLabels(labelProperties: [DataProperty.facility: facility, DataProperty.location: location])
         self.currentDate = Date()
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US")
         dateFormatter.dateFormat = "dd-MMM-yy"
         date.text = dateFormatter.string(from: self.currentDate!)
         newCode.text = self.scannedBarcode
+        self.status.text = self.currentStatus
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
 }

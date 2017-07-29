@@ -21,8 +21,9 @@ class MonitorInfoVC: MonitorDisplayVC {
         guard let areaMonitor = self.areaMonitor else {
             return
         }
-        var barcode = areaMonitor.value(forKey: DataProperty.newCode) as! String
-        if (barcode == "") {
+        var barcode = areaMonitor.value(forKey: DataProperty.newCode) as? String
+        if (barcode == nil) {
+            // TODO: Handle data corruptin error
             barcode = areaMonitor.value(forKey: DataProperty.oldCode) as! String
         }
         self.barcode.text = barcode

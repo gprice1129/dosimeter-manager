@@ -166,14 +166,26 @@
                                     <action selector="didPressSubmit:" destination="t4R-Ji-GHQ" eventType="touchUpInside" id="EnN-EP-DI5"/>
                                 </connections>
                             </button>
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No data found" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="02C-1P-K6K">
+                                <rect key="frame" x="81.5" y="269" width="158" height="30"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="25"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
+                            <constraint firstItem="oAg-vr-f3Y" firstAttribute="leading" secondItem="Sfb-UY-eHG" secondAttribute="leading" id="17D-0L-8eE"/>
+                            <constraint firstAttribute="trailing" secondItem="ZHM-ae-4uS" secondAttribute="trailing" id="3bK-mH-Li1"/>
                             <constraint firstItem="ZHM-ae-4uS" firstAttribute="leading" secondItem="oAg-vr-f3Y" secondAttribute="leading" id="BDJ-Mu-Qe9"/>
                             <constraint firstItem="ZHM-ae-4uS" firstAttribute="leading" secondItem="Sfb-UY-eHG" secondAttribute="leading" id="EWI-dr-RLZ"/>
+                            <constraint firstItem="02C-1P-K6K" firstAttribute="centerX" secondItem="Sfb-UY-eHG" secondAttribute="centerX" id="Mbd-N2-5f3"/>
                             <constraint firstItem="oAg-vr-f3Y" firstAttribute="top" secondItem="ZHM-ae-4uS" secondAttribute="bottom" constant="85" id="Ofl-j3-hLK"/>
                             <constraint firstItem="ZHM-ae-4uS" firstAttribute="trailing" secondItem="oAg-vr-f3Y" secondAttribute="trailing" id="ZyZ-wE-bFU"/>
                             <constraint firstItem="ZHM-ae-4uS" firstAttribute="top" secondItem="d0S-sb-kgK" secondAttribute="bottom" constant="100" id="ksR-ru-ZAK"/>
+                            <constraint firstItem="02C-1P-K6K" firstAttribute="centerY" secondItem="Sfb-UY-eHG" secondAttribute="centerY" id="pqh-2b-t6H"/>
+                            <constraint firstItem="ZHM-ae-4uS" firstAttribute="leading" secondItem="Sfb-UY-eHG" secondAttribute="leading" id="xNH-5g-RSo"/>
+                            <constraint firstAttribute="trailing" secondItem="oAg-vr-f3Y" secondAttribute="trailing" id="ynr-Xt-OFk"/>
                             <constraint firstItem="oAg-vr-f3Y" firstAttribute="bottom" secondItem="5VJ-10-kov" secondAttribute="top" id="zCR-zk-8wg"/>
                         </constraints>
                         <variation key="default">
@@ -198,11 +210,15 @@
                         </variation>
                     </view>
                     <connections>
+                        <outlet property="button" destination="oAg-vr-f3Y" id="WOu-ic-C6S"/>
                         <outlet property="facilityPicker" destination="ZHM-ae-4uS" id="puH-bH-t7R"/>
+                        <outlet property="noDataLabel" destination="02C-1P-K6K" id="2yv-Kt-l4n"/>
                         <segue destination="E3A-jW-cft" kind="show" identifier="SessionToReader" id="qga-D8-EDh"/>
+                        <segue destination="EiB-g5-Yps" kind="unwind" identifier="SessionToMain" unwindAction="didPressBackUnwindWithSender:" id="cY7-ug-ovo"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="tIL-ih-Pfu" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <exit id="EiB-g5-Yps" userLabel="Exit" sceneMemberID="exit"/>
             </objects>
             <point key="canvasLocation" x="1736.25" y="136.26760563380282"/>
         </scene>
@@ -350,9 +366,6 @@
                             <label opaque="NO" userInteractionEnabled="NO" alpha="0.69999999999999996" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SR0-yq-1UZ">
                                 <rect key="frame" x="0.0" y="524" width="224" height="44"/>
                                 <color key="backgroundColor" red="0.29803922770000002" green="0.29803922770000002" blue="0.29803922770000002" alpha="1" colorSpace="calibratedRGB"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="224" id="UFr-yk-YZL"/>
-                                </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <color key="textColor" red="0.80000001190000003" green="0.80000001190000003" blue="0.80000001190000003" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
@@ -370,28 +383,25 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
+                            <constraint firstAttribute="trailing" secondItem="SR0-yq-1UZ" secondAttribute="trailing" constant="96" id="0IE-BO-Gse"/>
                             <constraint firstAttribute="trailing" secondItem="Fg9-GH-PEb" secondAttribute="trailing" id="D9O-e0-rr8"/>
                             <constraint firstItem="ZpO-yl-FWI" firstAttribute="top" secondItem="SR0-yq-1UZ" secondAttribute="bottom" id="Hwl-Vf-Iaz"/>
                             <constraint firstItem="ZpO-yl-FWI" firstAttribute="top" secondItem="Fg9-GH-PEb" secondAttribute="bottom" id="KPR-t7-gYL"/>
-                            <constraint firstItem="Fg9-GH-PEb" firstAttribute="top" secondItem="5yH-It-j4y" secondAttribute="bottom" constant="460" id="RGS-Tv-C1i"/>
-                            <constraint firstItem="Fg9-GH-PEb" firstAttribute="top" secondItem="5yH-It-j4y" secondAttribute="bottom" constant="460" id="S7o-4Y-3f7"/>
                             <constraint firstItem="SR0-yq-1UZ" firstAttribute="top" secondItem="5yH-It-j4y" secondAttribute="bottom" constant="460" id="ehL-7S-G1F"/>
                             <constraint firstAttribute="bottom" secondItem="Fg9-GH-PEb" secondAttribute="bottom" id="g92-wg-YSV"/>
+                            <constraint firstItem="Fg9-GH-PEb" firstAttribute="height" secondItem="SR0-yq-1UZ" secondAttribute="height" id="hp4-a9-j9e"/>
                             <constraint firstItem="Fg9-GH-PEb" firstAttribute="leading" secondItem="SR0-yq-1UZ" secondAttribute="trailing" id="irS-4p-mfq"/>
                             <constraint firstAttribute="trailing" secondItem="Fg9-GH-PEb" secondAttribute="trailing" id="jgA-Li-7B2"/>
-                            <constraint firstItem="Fg9-GH-PEb" firstAttribute="leading" secondItem="SR0-yq-1UZ" secondAttribute="trailing" id="nVQ-EI-qKb"/>
                             <constraint firstItem="SR0-yq-1UZ" firstAttribute="leading" secondItem="VDp-c9-RkU" secondAttribute="leading" id="oUy-i7-SrF"/>
                         </constraints>
                         <variation key="default">
                             <mask key="constraints">
-                                <exclude reference="RGS-Tv-C1i"/>
                                 <exclude reference="g92-wg-YSV"/>
                                 <exclude reference="jgA-Li-7B2"/>
                             </mask>
                         </variation>
                         <variation key="heightClass=regular-widthClass=compact">
                             <mask key="constraints">
-                                <include reference="RGS-Tv-C1i"/>
                                 <include reference="g92-wg-YSV"/>
                                 <include reference="jgA-Li-7B2"/>
                             </mask>
@@ -421,7 +431,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="88" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="Pdf-fG-qiZ">
+                            <tableView opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="88" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="Pdf-fG-qiZ">
                                 <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <connections>
@@ -967,6 +977,9 @@
                                 <state key="normal" title="Cancel">
                                     <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 </state>
+                                <connections>
+                                    <segue destination="WIt-5v-ryx" kind="unwind" unwindAction="didPressCancelUnwindWithSender:" id="EUD-A4-AdG"/>
+                                </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>

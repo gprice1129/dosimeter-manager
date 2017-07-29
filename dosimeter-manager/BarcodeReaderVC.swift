@@ -21,6 +21,7 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
     var currentMode: ReaderMode = .verify
     var scannedBarcode: String?
     var areaMonitor: NSManagedObject?
+    var currentStatus: String = ""
     
     enum ReaderMode {
         case verify
@@ -104,10 +105,12 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
                 return
             }
             destinationController.areaMonitor = areaMonitor
+            
         case Segues.readerToExchange:
             guard let destinationController = segue.destination as? MonitorExchangeVC else {
                 return
             }
+            destinationController.currentStatus = self.currentStatus
             destinationController.scannedBarcode = self.scannedBarcode!
             destinationController.areaMonitor = self.areaMonitor!
         default:
@@ -209,9 +212,11 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
             let areaMonitor = areaMonitors[0]
             if (self.session == nil) {
                 guard let facility = areaMonitor.value(forKey: DataProperty.facility) as? String,
-                     let facilityNumber = areaMonitor.value(forKey: DataProperty.facilityNumber) as? String else {
+                     let facilityNumber = areaMonitor.value(forKey: DataProperty.facilityNumber) as? String,
+                     let status = areaMonitor.value(forKey: DataProperty.status) as? String else {
                     return
                 }
+                self.currentStatus = status
                 self.session = Session(forFacility: facility, withNumber: facilityNumber)
             }
             performSegue(withIdentifier: Segues.readerToVerify, sender: areaMonitors[0])
@@ -246,17 +251,13 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
     
     @IBAction func didPressConfirmUnwind(sender: UIStoryboardSegue) {
         setReplaceMode(sender: sender)
+        self.currentStatus = Status.recovered
         self.unpauseCaptureSession()
     }
     
     @IBAction func didPressFlagUnwind(sender: UIStoryboardSegue) {
         setReplaceMode(sender: sender)
-        // TODO: Set flagged status for areamonitor
-        guard let areaMonitor = self.areaMonitor else {
-            print("Error: no active area monitor found")
-            return
-        }
-        areaMonitor.setValue(Status.flagged, forKey: DataProperty.status)
+        self.currentStatus = Status.flagged
         self.unpauseCaptureSession()
     }
     
@@ -267,17 +268,11 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         }
         do {
             let areaMonitor = self.areaMonitor!
-            guard let currentStatus = areaMonitor.value(forKey: DataProperty.status) as? String else {
-                print("No status for areamonitor")
-                return
-            }
             let scannedBarcode = sourceController.scannedBarcode
             let currentDate = sourceController.currentDate!
             areaMonitor.setValue(scannedBarcode, forKey: DataProperty.newCode)
             areaMonitor.setValue(currentDate, forKey: DataProperty.pickupDate)
-            if (currentStatus == Status.unrecovered) {
-                areaMonitor.setValue(Status.recovered, forKey: DataProperty.status)
-            }
+            areaMonitor.setValue(self.currentStatus, forKey: DataProperty.status)
             try areaMonitor.managedObjectContext?.save()
             self.currentMode = .verify
             self.messageLabel.text = Messages.verifyMessage
@@ -286,5 +281,9 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
             print("Couldn't save areamonitor exchange")
             return
         }
+    }
+    
+    @IBAction func didPressCancelUnwind(sender: UIStoryboardSegue) {
+        return
     }
 }

@@ -39,6 +39,25 @@ class SessionDisplayVC: QueryVC {
         do {
             areaMonitors = try query(withKVPs: [(DataProperty.facility, facility),
                                             (DataProperty.facilityNumber, facilityNumber)])
+            areaMonitors = areaMonitors.sorted {
+                guard let status0 = $0.value(forKey: DataProperty.status) as? String,
+                    let status1 = $1.value(forKey: DataProperty.status) as? String else {
+                        print("data is corrupted")
+                        return false
+                }
+                switch (status0, status1) {
+                case let (s0, _) where s0 == Status.unrecovered:
+                    return true
+                case let (_, s1) where s1 == Status.unrecovered:
+                    return false
+                case let (s0, _) where s0 == Status.flagged:
+                    return true
+                case let (_, s1) where s1 == Status.flagged:
+                    return false
+                default:
+                    return true
+                }
+            }
         } catch {
             print("Error displaying session")
             return
@@ -74,12 +93,9 @@ extension SessionDisplayVC: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let areaMonitor = self.areaMonitors[indexPath.row]
+
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let description: String = areaMonitor.value(forKeyPath: DataProperty.location) as? String ?? "No description"
-        cell.textLabel?.text = "\(description)"
-        cell.textLabel?.numberOfLines = 0
-        cell.accessoryType = .disclosureIndicator
+
         return cell
     }
 }
@@ -88,5 +104,23 @@ extension SessionDisplayVC: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let areaMonitor = self.areaMonitors[indexPath.row]
         performSegue(withIdentifier: Segues.listToInfo, sender: areaMonitor)
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        let areaMonitor = self.areaMonitors[indexPath.row]
+        let description: String = areaMonitor.value(forKeyPath: DataProperty.location) as? String ?? "No description"
+        let status: String = areaMonitor.value(forKey: DataProperty.status) as! String
+        cell.textLabel?.text = "\(description)"
+        cell.textLabel?.numberOfLines = 0
+        cell.textLabel?.backgroundColor = UIColor.white.withAlphaComponent(0)
+        cell.accessoryType = .disclosureIndicator
+        switch (status) {
+        case Status.flagged:
+            cell.backgroundColor = UIColor.yellow.withAlphaComponent(0.5)
+        case Status.recovered:
+            cell.backgroundColor = UIColor.green.withAlphaComponent(0.5)
+        default:
+            break
+        }
     }
 }

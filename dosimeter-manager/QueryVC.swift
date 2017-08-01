@@ -56,19 +56,20 @@ class QueryVC: UIViewController {
         }
         let managedContext = appDelegate.persistentContainer.viewContext
         let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: EntityNames.areaMonitor)
-
-        if let kvps = kvps {
-            if (kvps.count > 0) {
-                var predicates: [NSPredicate] = []
-                for (key, value) in kvps {
-                    predicates.append(NSPredicate(format: "%K like %@", key, value))
-                }
-                if (predicates.count > 1) {
-                    fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
-                } else {
-                    fetchRequest.predicate = predicates[0]
-                }
+        let notRetiredPredicate = NSPredicate(format: "NOT (%K like %@)", DataProperty.status, Status.retired)
+        guard let kvps = kvps else {
+            fetchRequest.predicate = notRetiredPredicate
+            return try managedContext.fetch(fetchRequest)
+        }
+        if (kvps.count > 0) {
+            var predicates: [NSPredicate] = []
+            for (key, value) in kvps {
+                predicates.append(NSPredicate(format: "%K like %@", key, value))
             }
+            predicates.append(notRetiredPredicate)
+            fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+        } else {
+            fetchRequest.predicate = notRetiredPredicate
         }
         return try managedContext.fetch(fetchRequest)
     }
@@ -83,16 +84,5 @@ class QueryVC: UIViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
 
 }

@@ -14,6 +14,7 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
 
     @IBOutlet weak var messageLabel: UILabel!
     @IBOutlet weak var whatsLeftButton: UIButton!
+    @IBOutlet weak var flashlightButton: UIButton!
     var session: Session?
     var captureSession: AVCaptureSession?
     var videoPreviewLayer: AVCaptureVideoPreviewLayer?
@@ -22,6 +23,7 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
     var scannedBarcode: String?
     var areaMonitor: NSManagedObject?
     var currentStatus: String = ""
+    var flashlightIsOn: Bool = false
     
     enum ReaderMode {
         case verify
@@ -37,6 +39,11 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         static let readerToList: String = "ReaderToList"
         static let readerToVerify: String = "ReaderToVerify"
         static let readerToExchange: String = "ReaderToExchange"
+    }
+    
+    struct Colors {
+        static let on = UIColor(red: CGFloat(1.0), green: CGFloat(126.0/255), blue: CGFloat(121.0/255), alpha: CGFloat(1.0))
+        static let off = UIColor(red: CGFloat(0.0), green: CGFloat(122.0/255), blue: CGFloat(1.0), alpha: CGFloat(1.0))
     }
     
     override func viewDidLoad() {
@@ -55,6 +62,7 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
                 view.layer.addSublayer(videoPreviewLayer!)
                 view.bringSubview(toFront: messageLabel)
                 view.bringSubview(toFront: whatsLeftButton)
+                view.bringSubview(toFront: flashlightButton)
             }
         }
 
@@ -77,6 +85,7 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
             self.messageLabel.text = Messages.replaceMessage
         }
         captureSession?.startRunning()
+        self.toggleTorch(on: self.flashlightIsOn)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -104,8 +113,18 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
                  let areaMonitor = sender as? NSManagedObject else {
                 return
             }
+            if (self.session == nil) {
+                guard let facility = areaMonitor.value(forKey: DataProperty.facility) as? String,
+                     let facilityNumber = areaMonitor.value(forKey: DataProperty.facilityNumber) as? String else {
+                        return
+                }
+                self.session = Session(forFacility: facility, withNumber: facilityNumber)
+            }
+            guard let status = areaMonitor.value(forKey: DataProperty.status) as? String else {
+                return
+            }
+            self.currentStatus = status
             destinationController.areaMonitor = areaMonitor
-            
         case Segues.readerToExchange:
             guard let destinationController = segue.destination as? MonitorExchangeVC else {
                 return
@@ -130,7 +149,6 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         captureDevice?.focusMode = .continuousAutoFocus
         captureDevice?.videoZoomFactor = (captureDevice?.activeFormat.videoMaxZoomFactor)!
         captureDevice?.unlockForConfiguration()
-        
         captureSession = AVCaptureSession()
         let input = try AVCaptureDeviceInput(device: captureDevice)
         captureSession?.addInput(input)
@@ -175,7 +193,6 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
                       didOutputMetadataObjects metadataObjects: [Any]!,
                       from connection: AVCaptureConnection!) {
         // Handles what should be done when a barcode is read
-        
         if (self.captureSessionPaused) {
             return
         }
@@ -188,6 +205,9 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         if (metadataObj.type == AVMetadataObjectTypeDataMatrixCode ||
             metadataObj.type == AVMetadataObjectTypeCode128Code) {
             self.pauseCaptureSession()
+            if (self.scannedBarcode == metadataObj.stringValue) {
+                return
+            }
             self.scannedBarcode = metadataObj.stringValue
             switch (self.currentMode) {
             case .verify:
@@ -210,14 +230,24 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
                 return
             }
             let areaMonitor = areaMonitors[0]
-            if (self.session == nil) {
-                guard let facility = areaMonitor.value(forKey: DataProperty.facility) as? String,
-                     let facilityNumber = areaMonitor.value(forKey: DataProperty.facilityNumber) as? String,
-                     let status = areaMonitor.value(forKey: DataProperty.status) as? String else {
-                    return
-                }
-                self.currentStatus = status
-                self.session = Session(forFacility: facility, withNumber: facilityNumber)
+            guard let status = areaMonitor.value(forKey: DataProperty.status) as? String else {
+                return
+            }
+            if (status != Status.unrecovered) {
+                let alertController = UIAlertController(title: "Warning",
+                            message: "This area monitor has already been marked as complete, are you sure you want to continue?",
+                            preferredStyle: .alert)
+                let continueAction = UIAlertAction(title: "Continue", style: .default, handler: {action in
+                    self.performSegue(withIdentifier: Segues.readerToVerify, sender: areaMonitors[0])
+                })
+                let goBackAction = UIAlertAction(title: "Go Back", style: .cancel, handler: {action in
+                    self.scannedBarcode = ""
+                    self.unpauseCaptureSession()
+                })
+                alertController.addAction(continueAction)
+                alertController.addAction(goBackAction)
+                self.present(alertController, animated: true, completion: nil)
+                return
             }
             performSegue(withIdentifier: Segues.readerToVerify, sender: areaMonitors[0])
         } catch {
@@ -245,8 +275,36 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         self.messageLabel.text = Messages.replaceMessage
     }
     
+    func toggleTorch(on: Bool) {
+        guard let device = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeVideo) else {
+            return
+        }
+        do {
+            try device.lockForConfiguration()
+            if (on) {
+                device.torchMode = .on
+            } else {
+                device.torchMode = .off
+            }
+            device.unlockForConfiguration()
+        } catch {
+            print("Torch is currently being used by another application")
+            return
+        }
+    }
+    
     @IBAction func didPressWhatsLeftButton(_ sender: Any) {
         performSegue(withIdentifier: Segues.readerToList, sender: self)
+    }
+    
+    @IBAction func didPressFlashlightButton(_ sender: Any) {
+        if (self.flashlightIsOn) {
+            self.flashlightButton.backgroundColor = Colors.off
+        } else {
+            self.flashlightButton.backgroundColor = Colors.on
+        }
+        self.flashlightIsOn = !self.flashlightIsOn
+        self.toggleTorch(on: self.flashlightIsOn)
     }
     
     @IBAction func didPressConfirmUnwind(sender: UIStoryboardSegue) {

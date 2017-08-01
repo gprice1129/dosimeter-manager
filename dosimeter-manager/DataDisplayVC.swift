@@ -143,6 +143,13 @@ class DataDisplayVC: QueryVC {
                 entity[DataProperty.facilityNumber] = facilityNumber
             }
             entity[DataProperty.status] = Status.unrecovered
+            // TODO: Finding if the entry is retired can probably be optimized by looking at the data
+            for property in formatLine {
+                if (property.uppercased() == "RETIRED") {
+                    entity[DataProperty.status] = Status.retired
+                    break
+                }
+            }
             self.saveData(entity: entity)
         }
         return true

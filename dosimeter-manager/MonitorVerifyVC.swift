@@ -13,11 +13,20 @@ class MonitorVerifyVC: MonitorDisplayVC {
     @IBOutlet weak var location: UILabel!
     @IBOutlet weak var barcode: UILabel!
     @IBOutlet weak var status: UILabel!
+    @IBOutlet weak var tag: UILabel!
+    var scannedBarcode: String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupLabels(labelProperties: [DataProperty.facility: facility, DataProperty.location: location,
-                                    DataProperty.oldCode: barcode, DataProperty.status: status])
+        guard let barcode = self.scannedBarcode else {
+            setupLabels(labelProperties: [DataProperty.facility: self.facility, DataProperty.location: self.location,
+                                          DataProperty.oldCode: self.barcode, DataProperty.status: self.status,
+                                          DataProperty.tag: self.tag])
+            return
+        }
+        setupLabels(labelProperties: [DataProperty.facility: self.facility, DataProperty.location: self.location,
+                                      DataProperty.status: self.status, DataProperty.tag: self.tag])
+        self.barcode.text = barcode
     }
 
     override func didReceiveMemoryWarning() {

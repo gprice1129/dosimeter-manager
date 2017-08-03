@@ -13,20 +13,24 @@ class MonitorInfoVC: MonitorDisplayVC {
     @IBOutlet weak var location: UILabel!
     @IBOutlet weak var barcode: UILabel!
     @IBOutlet weak var status: UILabel!
+    @IBOutlet weak var tag: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupLabels(labelProperties: [DataProperty.facility: facility, DataProperty.location: location,
-                                    DataProperty.status: status])
+        setupLabels(labelProperties: [DataProperty.facility: self.facility, DataProperty.self.location: location,
+                                      DataProperty.status: self.status, DataProperty.tag: self.tag])
         guard let areaMonitor = self.areaMonitor else {
             return
         }
-        var barcode = areaMonitor.value(forKey: DataProperty.newCode) as? String
-        if (barcode == nil) {
+        var currentBarcode = areaMonitor.value(forKey: DataProperty.newCode) as? String
+        if (currentBarcode == nil) {
             // TODO: Handle data corruptin error
-            barcode = areaMonitor.value(forKey: DataProperty.oldCode) as! String
+        currentBarcode = areaMonitor.value(forKey: DataProperty.oldCode) as? String
         }
-        self.barcode.text = barcode
+        if (currentBarcode != nil) {
+            self.barcode.text = currentBarcode!
+        }
+        self.location.numberOfLines = 0
     }
 
     override func didReceiveMemoryWarning() {

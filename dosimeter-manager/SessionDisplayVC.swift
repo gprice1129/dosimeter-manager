@@ -9,19 +9,22 @@
 import UIKit
 import CoreData
 
-class SessionDisplayVC: QueryVC {
+class SessionDisplayVC: QueryModeVC {
     
+    @IBOutlet weak var unknownLocationButton: UIButton!
     @IBOutlet weak var descriptionDisplay: UITableView!
     var session: Session?
     var areaMonitors: [NSManagedObject] = []
     
     struct Segues {
         static let listToInfo = "ListToInfo"
+        static let listToVerify = "ListToVerify"
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         descriptionDisplay.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+
         guard let session = self.session else {
             self.title = "No session data found"
             return
@@ -37,27 +40,18 @@ class SessionDisplayVC: QueryVC {
             self.title = "Area monitors for \(facility.capitalized) \(facilityNumber)"
         }
         do {
-            areaMonitors = try query(withKVPs: [(DataProperty.facility, facility),
-                                            (DataProperty.facilityNumber, facilityNumber)])
-            areaMonitors = areaMonitors.sorted {
-                guard let status0 = $0.value(forKey: DataProperty.status) as? String,
-                    let status1 = $1.value(forKey: DataProperty.status) as? String else {
-                        print("data is corrupted")
-                        return false
-                }
-                switch (status0, status1) {
-                case let (s0, _) where s0 == Status.unrecovered:
-                    return true
-                case let (_, s1) where s1 == Status.unrecovered:
-                    return false
-                case let (s0, _) where s0 == Status.flagged:
-                    return true
-                case let (_, s1) where s1 == Status.flagged:
-                    return false
-                default:
-                    return true
-                }
+            switch (self.currentMode) {
+            case .normal:
+                self.unknownLocationButton.isHidden = true
+                self.unknownLocationButton.isUserInteractionEnabled = false
+                self.unknownLocationButton.frame.size.height = 0
+                areaMonitors = try query(withKVPs: [(DataProperty.facility, facility),
+                                                (DataProperty.facilityNumber, facilityNumber)])
+            case .recovery:
+                areaMonitors = try query(withKVPs: [(DataProperty.facility, facility),
+                                                (DataProperty.facilityNumber, facilityNumber)], fetchRetired: true)
             }
+            areaMonitors = areaMonitors.sorted(by: monitorComparator)
         } catch {
             print("Error displaying session")
             return
@@ -70,7 +64,11 @@ class SessionDisplayVC: QueryVC {
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if (segue.identifier == Segues.listToInfo) {
+        guard let identifier = segue.identifier else {
+            return
+        }
+        switch (identifier) {
+        case Segues.listToInfo:
             guard let destinationController = segue.destination as? MonitorInfoVC else {
                 return
             }
@@ -79,7 +77,24 @@ class SessionDisplayVC: QueryVC {
                 return
             }
             destinationController.areaMonitor = areaMonitor
+        case Segues.listToVerify:
+            guard let destinationController = segue.destination as? MonitorVerifyVC else {
+                return
+            }
+            guard let areaMonitor = sender as? NSManagedObject else {
+                return
+            }
+            destinationController.areaMonitor = areaMonitor
+            guard let barcode = newEntity[DataProperty.oldCode] else {
+                return
+            }
+            destinationController.scannedBarcode = barcode
+        default:
+            return
         }
+    }
+    
+    @IBAction func didPressUnknownLocation(_ sender: Any) {
     }
     
     @IBAction func didPressGoBackUnwind(sender: UIStoryboardSegue) {
@@ -93,9 +108,7 @@ extension SessionDisplayVC: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-
         return cell
     }
 }
@@ -103,22 +116,35 @@ extension SessionDisplayVC: UITableViewDataSource {
 extension SessionDisplayVC: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let areaMonitor = self.areaMonitors[indexPath.row]
-        performSegue(withIdentifier: Segues.listToInfo, sender: areaMonitor)
+        switch (self.currentMode) {
+        case .normal:
+            performSegue(withIdentifier: Segues.listToInfo, sender: areaMonitor)
+        case .recovery:
+            performSegue(withIdentifier: Segues.listToVerify, sender: areaMonitor)
+        }
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let areaMonitor = self.areaMonitors[indexPath.row]
         let description: String = areaMonitor.value(forKeyPath: DataProperty.location) as? String ?? "No description"
-        let status: String = areaMonitor.value(forKey: DataProperty.status) as! String
-        cell.textLabel?.text = "\(description)"
+        let status: String = areaMonitor.value(forKey: DataProperty.status) as? String ?? Status.flagged
+        let tag: String? = areaMonitor.value(forKey: DataProperty.tag) as? String
+        if (tag == nil) {
+            cell.textLabel?.text = "\(description)"
+        }
+        else {
+            cell.textLabel?.text = "\(tag!) \(description)"
+        }
         cell.textLabel?.numberOfLines = 0
-        cell.textLabel?.backgroundColor = UIColor.white.withAlphaComponent(0)
         cell.accessoryType = .disclosureIndicator
+        cell.textLabel?.backgroundColor = UIColor.white.withAlphaComponent(0)
         switch (status) {
         case Status.flagged:
             cell.backgroundColor = UIColor.yellow.withAlphaComponent(0.5)
         case Status.recovered:
             cell.backgroundColor = UIColor.green.withAlphaComponent(0.5)
+        case Status.retired:
+            cell.backgroundColor = UIColor.red.withAlphaComponent(0.5)
         default:
             break
         }

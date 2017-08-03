@@ -9,8 +9,9 @@
         <attribute name="pickupDate" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="placementDate" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="status" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="tag" optional="YES" attributeType="String" syncable="YES"/>
     </entity>
     <elements>
-        <element name="AreaMonitor" positionX="-63" positionY="-18" width="128" height="165"/>
+        <element name="AreaMonitor" positionX="-63" positionY="-18" width="128" height="180"/>
     </elements>
 </model>

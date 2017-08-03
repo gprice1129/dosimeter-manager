@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
+class SessionController: QueryModeVC, UIPickerViewDelegate, UIPickerViewDataSource {
     
     @IBOutlet weak var noDataLabel: UILabel!
     @IBOutlet weak var button: UIButton!
@@ -29,6 +29,7 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
     
     struct Segues {
         static let sessionToReader: String = "SessionToReader"
+        static let sessionToDisplay: String = "SessionToDisplay"
         static let sessionToMain: String = "SessionToMain"
     }
     
@@ -47,25 +48,7 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
                 self.noData = true
                 return
             }
-            var tempFacilities: Set<String> = []
-            var facilityDictionary: [String: Set<String>] = [:]
-            for monitor in areaMonitors {
-                guard let facility: String = monitor.value(forKey: DataProperty.facility) as? String,
-                     let facilityNumber: String = monitor.value(forKey: DataProperty.facilityNumber) as? String else {
-                    continue
-                }
-                if (tempFacilities.contains(facility)) {
-                    facilityDictionary[facility]?.insert(facilityNumber)
-                }
-                else {
-                    tempFacilities.insert(facility)
-                    facilityDictionary[facility] = Set<String>([facilityNumber])
-                }
-            }
-            self.facilities = Array(facilityDictionary.keys.sorted())
-            for facility in self.facilities {
-                self.facilityNumbers.append(facilityDictionary[facility]!.sorted())
-            }
+            (self.facilities, self.facilityNumbers) = getUniqueFacilities(from: areaMonitors)
         } catch {
             return
         }
@@ -77,11 +60,25 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if (segue.identifier == Segues.sessionToReader) {
+            
+        guard let identifier = segue.identifier else {
+            return
+        }
+        switch (identifier) {
+        case Segues.sessionToReader:
             guard let destinationController = segue.destination as? BarcodeReaderVC else {
                 return
             }
             destinationController.session = self.session
+        case Segues.sessionToDisplay:
+            guard let destinationController = segue.destination as? SessionDisplayVC else {
+                return
+            }
+            destinationController.session = self.session
+            destinationController.currentMode = self.currentMode
+            destinationController.newEntity = self.newEntity
+        default:
+            return
         }
     }
     
@@ -129,11 +126,20 @@ class SessionController: QueryVC, UIPickerViewDelegate, UIPickerViewDataSource {
     @IBAction func didPressSubmit(_ sender: Any) {
         if (noData) {
             performSegue(withIdentifier: Segues.sessionToMain, sender: self)
-        } else {
-            let facility: String? = self.facilities[self.selectedFacility]
-            let facilityNumber: String? = self.facilityNumbers[self.selectedFacility][self.selectedFacilityNumber]
-            self.session = Session(forFacility: facility, withNumber: facilityNumber)
+            return
+        }
+        let facility: String = self.facilities[self.selectedFacility]
+        let facilityNumber: String = self.facilityNumbers[self.selectedFacility][self.selectedFacilityNumber]
+        
+        self.session = Session(forFacility: facility, withNumber: facilityNumber)
+    
+        switch (self.currentMode) {
+        case .normal:
             performSegue(withIdentifier: Segues.sessionToReader, sender: self)
+        case .recovery:
+            self.newEntity[DataProperty.facility] = facility
+            self.newEntity[DataProperty.facilityNumber] = facilityNumber
+            performSegue(withIdentifier: Segues.sessionToDisplay, sender: self)
         }
     }
 }

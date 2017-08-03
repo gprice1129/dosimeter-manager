@@ -39,6 +39,7 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
         static let readerToList: String = "ReaderToList"
         static let readerToVerify: String = "ReaderToVerify"
         static let readerToExchange: String = "ReaderToExchange"
+        static let readerToRecovery: String = "ReaderToRecovery"
     }
     
     struct Colors {
@@ -132,6 +133,11 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
             destinationController.currentStatus = self.currentStatus
             destinationController.scannedBarcode = self.scannedBarcode!
             destinationController.areaMonitor = self.areaMonitor!
+        case Segues.readerToRecovery:
+            guard let destinationController = segue.destination as? SessionController else {
+                return
+            }
+            destinationController.newEntity[DataProperty.oldCode] = self.scannedBarcode!
         default:
             return
         }
@@ -226,7 +232,16 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
                 return
             }
             if(areaMonitors.count < 1) {
-                print("Error: No areamonitor found with the scanned barcode")
+                // No area monitor found with this barcode
+                generateWarning(message: "The scanned barcode: \(self.scannedBarcode!) was not found in the system, what do you want to do?",
+                    continueMsg: "Pick Location", cancelMsg: "Rescan",
+                    continueAction: {action in
+                        self.performSegue(withIdentifier: Segues.readerToRecovery, sender: self)
+                    },
+                    cancelAction: {action in
+                        self.scannedBarcode = ""
+                        self.unpauseCaptureSession()
+                    })
                 return
             }
             let areaMonitor = areaMonitors[0]
@@ -234,20 +249,16 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
                 return
             }
             if (status != Status.unrecovered) {
-                let alertController = UIAlertController(title: "Warning",
-                            message: "This area monitor has already been marked as complete, are you sure you want to continue?",
-                            preferredStyle: .alert)
-                let continueAction = UIAlertAction(title: "Continue", style: .default, handler: {action in
-                    self.performSegue(withIdentifier: Segues.readerToVerify, sender: areaMonitors[0])
-                })
-                let goBackAction = UIAlertAction(title: "Go Back", style: .cancel, handler: {action in
-                    self.scannedBarcode = ""
-                    self.unpauseCaptureSession()
-                })
-                alertController.addAction(continueAction)
-                alertController.addAction(goBackAction)
-                self.present(alertController, animated: true, completion: nil)
-                return
+                generateWarning(message: "This area monitor has already been marked as complete, are you sure you want to continue?",
+                             continueMsg: "Continue", cancelMsg: "Go Back",
+                             continueAction: {action in
+                                 self.performSegue(withIdentifier: Segues.readerToVerify, sender: areaMonitors[0])
+                             },
+                             cancelAction: {action in
+                                 self.scannedBarcode = ""
+                                 self.unpauseCaptureSession()
+                             })
+            return
             }
             performSegue(withIdentifier: Segues.readerToVerify, sender: areaMonitors[0])
         } catch {
@@ -255,7 +266,17 @@ class BarcodeReaderVC: QueryVC, AVCaptureMetadataOutputObjectsDelegate {
             return
         }
     }
-        
+    
+    func generateWarning(message: String, continueMsg: String, cancelMsg: String,
+                         continueAction: ((UIAlertAction) -> Void)?, cancelAction: ((UIAlertAction) -> Void)?) {
+        let alertController = UIAlertController(title: "Warning", message: message, preferredStyle: .alert)
+        let continueAction = UIAlertAction(title: continueMsg, style: .default, handler: continueAction)
+        let cancelAction = UIAlertAction(title: cancelMsg, style: .cancel, handler: cancelAction)
+        alertController.addAction(continueAction)
+        alertController.addAction(cancelAction)
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
     func replaceBarcode() {
         guard let areaMonitor = self.areaMonitor else {
             print("Error: No areamonitor to replace")

@@ -142,6 +142,10 @@ class DataDisplayVC: QueryVC {
             if let facilityNumber = formatLine.last {
                 entity[DataProperty.facilityNumber] = facilityNumber
             }
+            let tag = formatLine[formatLine.count - 2]
+            if (tag != "") {
+                entity[DataProperty.tag] = tag
+            }
             entity[DataProperty.status] = Status.unrecovered
             // TODO: Finding if the entry is retired can probably be optimized by looking at the data
             for property in formatLine {

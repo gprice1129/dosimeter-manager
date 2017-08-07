@@ -11,22 +11,31 @@ import CoreData
 
 class SessionDisplayVC: QueryModeVC {
     
-    @IBOutlet weak var unknownLocationButton: UIButton!
+    @IBOutlet weak var errorButton: UIButton!
     @IBOutlet weak var descriptionDisplay: UITableView!
+    @IBOutlet weak var heightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var monitorView: UITableView!
     var session: Session?
     var areaMonitors: [NSManagedObject] = []
     
     struct Segues {
         static let listToInfo = "ListToInfo"
         static let listToVerify = "ListToVerify"
+        static let unknownUnwind = "UnknownUnwind"
+        static let resetUnwind = "ResetUnwind"
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         descriptionDisplay.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-
+        self.navigationController!.navigationBar.topItem!.title = "Back"
+        if (self.currentMode == .error) {
+            self.errorButton.setTitle("Flag All", for: .normal)
+            areaMonitors = areaMonitors.sorted(by: monitorComparator)
+            return
+        }
         guard let session = self.session else {
-            self.title = "No session data found"
+            self.disableErrorButton()
             return
         }
         guard let facility = session.facility, let facilityNumber = session.facilityNumber else {
@@ -34,22 +43,22 @@ class SessionDisplayVC: QueryModeVC {
             return
         }
         if (facilityNumber == "NONE") {
-            self.title = "Area monitors for \(facility.capitalized)"
+            self.title = "Area monitors for \(facility.uppercased())"
         }
         else {
-            self.title = "Area monitors for \(facility.capitalized) \(facilityNumber)"
+            self.title = "Area monitors for \(facility.uppercased()) \(facilityNumber)"
         }
         do {
             switch (self.currentMode) {
             case .normal:
-                self.unknownLocationButton.isHidden = true
-                self.unknownLocationButton.isUserInteractionEnabled = false
-                self.unknownLocationButton.frame.size.height = 0
+                self.disableErrorButton()
                 areaMonitors = try query(withKVPs: [(DataProperty.facility, facility),
                                                 (DataProperty.facilityNumber, facilityNumber)])
             case .recovery:
                 areaMonitors = try query(withKVPs: [(DataProperty.facility, facility),
                                                 (DataProperty.facilityNumber, facilityNumber)], fetchRetired: true)
+            default:
+                break
             }
             areaMonitors = areaMonitors.sorted(by: monitorComparator)
         } catch {
@@ -77,6 +86,7 @@ class SessionDisplayVC: QueryModeVC {
                 return
             }
             destinationController.areaMonitor = areaMonitor
+            destinationController.currentMode = self.currentMode
         case Segues.listToVerify:
             guard let destinationController = segue.destination as? MonitorVerifyVC else {
                 return
@@ -84,20 +94,88 @@ class SessionDisplayVC: QueryModeVC {
             guard let areaMonitor = sender as? NSManagedObject else {
                 return
             }
-            destinationController.areaMonitor = areaMonitor
-            guard let barcode = newEntity[DataProperty.oldCode] else {
+            guard let location = areaMonitor.value(forKey: DataProperty.location) as? String else {
                 return
             }
-            destinationController.scannedBarcode = barcode
+            var tag = areaMonitor.value(forKey: DataProperty.tag) as? String
+            if (tag == nil) {
+                tag = ""
+            }
+            self.newEntity[DataProperty.location] = location
+            self.newEntity[DataProperty.tag] = tag!
+            destinationController.areaMonitor = areaMonitor
+            destinationController.newEntity = self.newEntity
+            destinationController.currentMode = self.currentMode
+        case Segues.unknownUnwind:
+            guard let destinationController = segue.destination as? BarcodeReaderVC,
+                 let areaMonitor = sender as? NSManagedObject else {
+                return
+            }
+            destinationController.areaMonitor = areaMonitor
+            destinationController.newEntity = self.newEntity
         default:
             return
         }
     }
     
-    @IBAction func didPressUnknownLocation(_ sender: Any) {
+    func disableErrorButton() {
+        self.errorButton.isHidden = true
+        self.errorButton.isUserInteractionEnabled = false
+        self.errorButton.frame.size.height = 0
+        self.heightConstraint.constant = CGFloat(0)
     }
     
-    @IBAction func didPressGoBackUnwind(sender: UIStoryboardSegue) {
+    @IBAction func didPressErrorButton(_ sender: UIButton) {
+        switch (self.currentMode) {
+        case .recovery:
+            self.newEntity[DataProperty.facility] = "Unknown"
+            self.newEntity[DataProperty.facilityNumber] = "NONE"
+            self.newEntity[DataProperty.tag] = "Unknown"
+            self.newEntity[DataProperty.location] = "Unknown"
+            self.newEntity[DataProperty.status] = Status.flagged
+            do {
+                let areaMonitor = try self.addEntity(entity: self.newEntity)
+                generateWarning(title: "Flagged Successfully", message: "The area monitor has been flagged successfully. How do you want to proceed?",
+                        continueMsg: "Replace this monitor", cancelMsg: "Replace a different monitor",
+                        continueAction: {action in
+                            self.performSegue(withIdentifier: Segues.unknownUnwind, sender: areaMonitor)
+                        },
+                        cancelAction: {action in
+                            self.performSegue(withIdentifier: Segues.resetUnwind, sender: nil)
+                        })
+            } catch {
+                return
+            }
+        case .error:
+            var statusTracker: [String] = []
+            guard let managedContext = areaMonitors[0].managedObjectContext else {
+                return
+            }
+            do {
+                for monitor in areaMonitors {
+                    let status = monitor.value(forKey: DataProperty.status) as? String ?? Status.flagged
+                    statusTracker.append(status)
+                    monitor.setValue(Status.flagged, forKey: DataProperty.status)
+                }
+                try managedContext.save()
+                generateMessage(title: "Monitors have been Flagged", message: "All the monitors have been successfully flagged.",
+                        continueMsg: "Okay",
+                        continueAction: {action in
+                            self.performSegue(withIdentifier: Segues.resetUnwind, sender: nil)
+                        })
+            } catch {
+                for (i, monitor) in areaMonitors.enumerated() {
+                    monitor.setValue(statusTracker[i], forKey: DataProperty.status)
+                }
+                return
+            }
+        default:
+            break
+        }
+    }
+    
+    @IBAction func didPressButtonUnwind(sender: UIStoryboardSegue) {
+        self.monitorView.reloadData()
         return
     }
 }
@@ -117,7 +195,7 @@ extension SessionDisplayVC: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let areaMonitor = self.areaMonitors[indexPath.row]
         switch (self.currentMode) {
-        case .normal:
+        case .normal, .error:
             performSegue(withIdentifier: Segues.listToInfo, sender: areaMonitor)
         case .recovery:
             performSegue(withIdentifier: Segues.listToVerify, sender: areaMonitor)
@@ -128,8 +206,8 @@ extension SessionDisplayVC: UITableViewDelegate {
         let areaMonitor = self.areaMonitors[indexPath.row]
         let description: String = areaMonitor.value(forKeyPath: DataProperty.location) as? String ?? "No description"
         let status: String = areaMonitor.value(forKey: DataProperty.status) as? String ?? Status.flagged
-        let tag: String? = areaMonitor.value(forKey: DataProperty.tag) as? String
-        if (tag == nil) {
+        let tag: String? = areaMonitor.value(forKey: DataProperty.tag) as? String ?? "Unknown"
+        if (tag == "Unknown") {
             cell.textLabel?.text = "\(description)"
         }
         else {

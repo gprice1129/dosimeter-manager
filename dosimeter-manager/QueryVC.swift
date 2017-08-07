@@ -11,6 +11,8 @@ import CoreData
 
 class QueryVC: UIViewController {
     
+    var newEntity: [String: String] = [:]
+    
     struct EntityNames {
         static let areaMonitor: String = "AreaMonitor"
     }
@@ -60,7 +62,44 @@ class QueryVC: UIViewController {
         return try managedContext.fetch(fetchRequest)
     }
     
-
+    func generateWarning(title: String, message: String, continueMsg: String?, cancelMsg: String?,
+                         continueAction: ((UIAlertAction) -> Void)?, cancelAction: ((UIAlertAction) -> Void)?) {
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        if (continueMsg != nil) {
+            alertController.addAction(UIAlertAction(title: continueMsg, style: .default, handler: continueAction))
+        }
+        if (cancelMsg != nil) {
+            alertController.addAction(UIAlertAction(title: cancelMsg, style: .cancel, handler: cancelAction))
+        }
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
+    func generateMessage(title: String, message: String, continueMsg: String, continueAction: ((UIAlertAction) -> Void)?) {
+        generateWarning(title: title, message: message, continueMsg: nil, cancelMsg: continueMsg, continueAction: nil,
+                cancelAction: continueAction)
+    }
+    
+    func addEntity(entity: [String: String]) throws -> NSManagedObject {
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+            throw NSError()
+        }
+        let managedContext = appDelegate.persistentContainer.viewContext
+        let coreDataEntity = NSEntityDescription.entity(forEntityName: EntityNames.areaMonitor, in: managedContext)!
+        let areaMonitor = NSManagedObject(entity: coreDataEntity, insertInto: managedContext)
+        
+        for (propertyKey, propertyValue) in entity {
+            var value: Any? = propertyValue
+            if (propertyKey == DataProperty.pickupDate || propertyKey == DataProperty.placementDate) {
+                let dateFormatter = DateFormatter()
+                dateFormatter.locale = Locale(identifier: "en_US")
+                dateFormatter.setLocalizedDateFormatFromTemplate("dd-MMM-yy")
+                value = dateFormatter.date(from: propertyValue)
+            }
+            areaMonitor.setValue(value, forKeyPath: propertyKey)
+        }
+        try managedContext.save()
+        return areaMonitor
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()

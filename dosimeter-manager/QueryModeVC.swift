@@ -11,11 +11,11 @@ import UIKit
 class QueryModeVC: QueryVC {
     
     var currentMode: Mode = .normal
-    var newEntity: [String: String] = [:]
     
     enum Mode {
         case normal
         case recovery
+        case error
     }
 
     override func viewDidLoad() {

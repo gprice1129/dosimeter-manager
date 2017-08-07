@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class MonitorDisplayVC: QueryVC {
+class MonitorDisplayVC: QueryModeVC {
     
     var areaMonitor: NSManagedObject?
     
@@ -27,10 +27,7 @@ class MonitorDisplayVC: QueryVC {
             return
         }
         for key in labelProperties.keys {
-            guard let value = areaMonitor.value(forKey: key) as? String else {
-                // TODO: Report error
-                return
-            }
+            let value = areaMonitor.value(forKey: key) as? String ?? "N/A"
             labelProperties[key]!.text = value
         }
     }

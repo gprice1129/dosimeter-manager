@@ -21,7 +21,21 @@ class MonitorExchangeVC: MonitorDisplayVC {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupLabels(labelProperties: [DataProperty.facility: facility, DataProperty.location: location, DataProperty.tag: tag])
+        if (self.currentMode == .normal) {
+            setupLabels(labelProperties: [DataProperty.facility: facility, DataProperty.location: location, DataProperty.tag: tag])
+        } else {
+            let facility = newEntity[DataProperty.facility]
+            let facilityNumber = newEntity[DataProperty.facilityNumber]
+            let location = newEntity[DataProperty.location] ?? "Unknown"
+            let tag = newEntity[DataProperty.tag] ?? "Unknown"
+            if (facility! == "Unknown" || facilityNumber! == "NONE") {
+                self.facility.text = facility!
+            } else {
+                self.facility.text = "\(facility!) \(facilityNumber!)"
+            }
+            self.location.text = location
+            self.tag.text = tag
+        }
         self.currentDate = Date()
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US")

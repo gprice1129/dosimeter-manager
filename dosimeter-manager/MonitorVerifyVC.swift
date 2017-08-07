@@ -14,11 +14,10 @@ class MonitorVerifyVC: MonitorDisplayVC {
     @IBOutlet weak var barcode: UILabel!
     @IBOutlet weak var status: UILabel!
     @IBOutlet weak var tag: UILabel!
-    var scannedBarcode: String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        guard let barcode = self.scannedBarcode else {
+        guard let barcode = self.newEntity[DataProperty.oldCode] else {
             setupLabels(labelProperties: [DataProperty.facility: self.facility, DataProperty.location: self.location,
                                           DataProperty.oldCode: self.barcode, DataProperty.status: self.status,
                                           DataProperty.tag: self.tag])

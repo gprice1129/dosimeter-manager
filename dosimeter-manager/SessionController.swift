@@ -140,6 +140,8 @@ class SessionController: QueryModeVC, UIPickerViewDelegate, UIPickerViewDataSour
             self.newEntity[DataProperty.facility] = facility
             self.newEntity[DataProperty.facilityNumber] = facilityNumber
             performSegue(withIdentifier: Segues.sessionToDisplay, sender: self)
+        case .error:
+            break
         }
     }
 }

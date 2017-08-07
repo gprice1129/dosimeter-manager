@@ -7,8 +7,14 @@
 //
 
 import CoreData
+import UIKit
 
 func monitorComparator(areaMonitor0: NSManagedObject, areaMonitor1: NSManagedObject) -> Bool {
+    func toInteger(_ tag: String) -> Int? {
+        let strippedTag = String(tag.characters.filter {"0123456789".characters.contains($0)})
+        return Int(strippedTag)
+    }
+    
     guard let status0 = areaMonitor0.value(forKey: DataProperty.status) as? String,
          let status1 = areaMonitor1.value(forKey: DataProperty.status) as? String else {
             print("data is corrupted")
@@ -16,15 +22,15 @@ func monitorComparator(areaMonitor0: NSManagedObject, areaMonitor1: NSManagedObj
     }
     switch (status0, status1) {
     case let (s0, s1) where s0 == s1:
-        let tag0 = areaMonitor0.value(forKey: DataProperty.tag) as? String
-        let tag1 = areaMonitor1.value(forKey: DataProperty.tag) as? String
-        if (tag0 == nil) {
+        guard let tag0 = areaMonitor0.value(forKey: DataProperty.tag) as? String,
+             let tagNumber0 = toInteger(tag0) else {
             return false
         }
-        if (tag1 == nil) {
+        guard let tag1 = areaMonitor1.value(forKey: DataProperty.tag) as? String,
+             let tagNumber1 = toInteger(tag1) else {
             return true
         }
-        return (tag0! < tag1!)
+        return (tagNumber0 < tagNumber1)
     case let (s0, _) where s0 == Status.unrecovered:
         return true
     case let (_, s1) where s1 == Status.unrecovered:

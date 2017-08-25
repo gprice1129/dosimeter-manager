@@ -126,7 +126,7 @@ class BarcodeReaderVC: QueryModeVC, AVCaptureMetadataOutputObjectsDelegate {
                 return
             }
             if (self.currentMode == .recovery) {
-                let tag = areaMonitor.value(forKey: DataProperty.tag) as? String ?? "NONE"
+                let tag = areaMonitor.value(forKey: DataProperty.tag) as? String ?? DataProperty.placeholder
                 self.newEntity[DataProperty.oldCode] = self.scannedBarcode
                 self.newEntity[DataProperty.facility] = (areaMonitor.value(forKey: DataProperty.facility) as! String)
                 self.newEntity[DataProperty.facilityNumber] = (areaMonitor.value(forKey: DataProperty.facilityNumber) as! String)
@@ -411,7 +411,7 @@ class BarcodeReaderVC: QueryModeVC, AVCaptureMetadataOutputObjectsDelegate {
                 areaMonitor.setValue(self.newEntity[DataProperty.facilityNumber], forKey: DataProperty.facilityNumber)
                 areaMonitor.setValue(self.newEntity[DataProperty.tag], forKey: DataProperty.tag)
             }
-            try areaMonitor.managedObjectContext?.save()
+            try self.saveMonitor(areaMonitor: areaMonitor)
             self.resetState()
             self.unpauseCaptureSession()
         } catch {

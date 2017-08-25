@@ -41,7 +41,7 @@ class MonitorInfoVC: MonitorDisplayVC {
             }
             do {
                 areaMonitor.setValue(Status.flagged, forKey: DataProperty.status)
-                try areaMonitor.managedObjectContext?.save()
+                try self.saveMonitor(areaMonitor: areaMonitor)
             } catch {
                 // TODO: Provide a useful error for the user
                 print("Error: Couldn't save the status of the flagged area monitor")

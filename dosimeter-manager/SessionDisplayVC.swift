@@ -42,7 +42,7 @@ class SessionDisplayVC: QueryModeVC {
             print("Malformed session detected")
             return
         }
-        if (facilityNumber == "NONE") {
+        if (facilityNumber == DataProperty.placeholder) {
             self.title = "Area monitors for \(facility.uppercased())"
         }
         else {
@@ -128,10 +128,10 @@ class SessionDisplayVC: QueryModeVC {
     @IBAction func didPressErrorButton(_ sender: UIButton) {
         switch (self.currentMode) {
         case .recovery:
-            self.newEntity[DataProperty.facility] = "Unknown"
-            self.newEntity[DataProperty.facilityNumber] = "NONE"
-            self.newEntity[DataProperty.tag] = "Unknown"
-            self.newEntity[DataProperty.location] = "Unknown"
+            self.newEntity[DataProperty.facility] = DataProperty.placeholder
+            self.newEntity[DataProperty.facilityNumber] = DataProperty.placeholder
+            self.newEntity[DataProperty.tag] = DataProperty.placeholder
+            self.newEntity[DataProperty.location] = DataProperty.placeholder
             self.newEntity[DataProperty.status] = Status.flagged
             do {
                 let areaMonitor = try self.addEntity(entity: self.newEntity)
@@ -148,14 +148,19 @@ class SessionDisplayVC: QueryModeVC {
             }
         case .error:
             var statusTracker: [String] = []
+            var isModifiedTracker: [Bool] = []
             guard let managedContext = areaMonitors[0].managedObjectContext else {
                 return
             }
             do {
-                for monitor in areaMonitors {
-                    let status = monitor.value(forKey: DataProperty.status) as? String ?? Status.flagged
+                // TODO: Re-engineer this code to fit with the interface provided by QueryVC
+                for areaMonitor in areaMonitors {
+                    let status = areaMonitor.value(forKey: DataProperty.status) as? String ?? Status.flagged
+                    let isModified = areaMonitor.value(forKey: DataProperty.modified) as? Bool ?? true
                     statusTracker.append(status)
-                    monitor.setValue(Status.flagged, forKey: DataProperty.status)
+                    isModifiedTracker.append(isModified)
+                    areaMonitor.setValue(Status.flagged, forKey: DataProperty.status)
+                    areaMonitor.setValue(true, forKey: DataProperty.modified)
                 }
                 try managedContext.save()
                 generateMessage(title: "Monitors have been Flagged", message: "All the monitors have been successfully flagged.",
@@ -164,8 +169,9 @@ class SessionDisplayVC: QueryModeVC {
                             self.performSegue(withIdentifier: Segues.resetUnwind, sender: nil)
                         })
             } catch {
-                for (i, monitor) in areaMonitors.enumerated() {
-                    monitor.setValue(statusTracker[i], forKey: DataProperty.status)
+                for (i, areaMonitor) in areaMonitors.enumerated() {
+                    areaMonitor.setValue(statusTracker[i], forKey: DataProperty.status)
+                    areaMonitor.setValue(isModifiedTracker[i], forKey: DataProperty.modified)
                 }
                 return
             }
@@ -204,10 +210,10 @@ extension SessionDisplayVC: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let areaMonitor = self.areaMonitors[indexPath.row]
-        let description: String = areaMonitor.value(forKeyPath: DataProperty.location) as? String ?? "No description"
+        let description: String = areaMonitor.value(forKeyPath: DataProperty.location) as? String ?? DataProperty.placeholder
         let status: String = areaMonitor.value(forKey: DataProperty.status) as? String ?? Status.flagged
-        let tag: String? = areaMonitor.value(forKey: DataProperty.tag) as? String ?? "Unknown"
-        if (tag == "Unknown") {
+        let tag: String? = areaMonitor.value(forKey: DataProperty.tag) as? String ?? DataProperty.placeholder
+        if (tag == DataProperty.placeholder) {
             cell.textLabel?.text = "\(description)"
         }
         else {
@@ -224,7 +230,7 @@ extension SessionDisplayVC: UITableViewDelegate {
         case Status.retired:
             cell.backgroundColor = UIColor.red.withAlphaComponent(0.5)
         default:
-            break
+            cell.backgroundColor = UIColor.white
         }
     }
 }

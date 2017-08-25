@@ -9,6 +9,7 @@
 import UIKit
 
 struct DataProperty {
+    // Accessors for data properties
     static let facility = "facility"
     static let facilityNumber = "facilityNumber"
     static let location = "location"
@@ -18,6 +19,13 @@ struct DataProperty {
     static let placementDate = "placementDate"
     static let status = "status"
     static let tag = "tag"
+    static let modified = "modified"
+    
+    // Placeholder for a missing data property
+    static let placeholder = " "
+    
+    // Used for the period property
+    static let deleteDate = "deleteDate"
 }
 
 struct Status {
@@ -30,4 +38,8 @@ struct Status {
 struct Colors {
     static let salmon: UIColor = UIColor(red: CGFloat(1.0), green: CGFloat(126.0/255), blue: CGFloat(121.0/255), alpha: CGFloat(1.0))
     static let blue: UIColor = UIColor(red: CGFloat(0.0), green: CGFloat(122.0/255), blue: CGFloat(1.0), alpha: CGFloat(1.0))
+}
+
+struct Templates {
+    static let exportFields = "Building,Tag,Location,Old Inlight,Placement Date,Pickup Date,New Inlight\n"
 }

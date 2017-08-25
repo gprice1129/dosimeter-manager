@@ -14,34 +14,15 @@ func monitorComparator(areaMonitor0: NSManagedObject, areaMonitor1: NSManagedObj
         let strippedTag = String(tag.characters.filter {"0123456789".characters.contains($0)})
         return Int(strippedTag)
     }
-    
-    guard let status0 = areaMonitor0.value(forKey: DataProperty.status) as? String,
-         let status1 = areaMonitor1.value(forKey: DataProperty.status) as? String else {
-            print("data is corrupted")
-            return false
+    guard let tag0 = areaMonitor0.value(forKey: DataProperty.tag) as? String,
+        let tagNumber0 = toInteger(tag0) else {
+        return false
     }
-    switch (status0, status1) {
-    case let (s0, s1) where s0 == s1:
-        guard let tag0 = areaMonitor0.value(forKey: DataProperty.tag) as? String,
-             let tagNumber0 = toInteger(tag0) else {
-            return false
-        }
-        guard let tag1 = areaMonitor1.value(forKey: DataProperty.tag) as? String,
-             let tagNumber1 = toInteger(tag1) else {
-            return true
-        }
-        return (tagNumber0 < tagNumber1)
-    case let (s0, _) where s0 == Status.unrecovered:
-        return true
-    case let (_, s1) where s1 == Status.unrecovered:
-        return false
-    case let (s0, _) where s0 == Status.flagged:
-        return true
-    case let (_, s1) where s1 == Status.flagged:
-        return false
-    default:
+    guard let tag1 = areaMonitor1.value(forKey: DataProperty.tag) as? String,
+        let tagNumber1 = toInteger(tag1) else {
         return true
     }
+    return (tagNumber0 < tagNumber1)
 }
 
 func getUniqueFacilities(from areaMonitors: [NSManagedObject]) -> ([String], [[String]]) {
@@ -94,7 +75,7 @@ func format(line: String) -> [String]? {
     formattedFacility = formattedFacility.trimmingCharacters(in: .whitespaces).uppercased()
     tag = tag.trimmingCharacters(in: .whitespaces)
     var facility: String = formattedFacility
-    var facilityNumber: String = "NONE"
+    var facilityNumber: String = DataProperty.placeholder
     if (formattedFacility.hasPrefix("BLDG")) {
         let splitFacility = formattedFacility.components(separatedBy: .whitespaces)
         facility = splitFacility[0]
@@ -132,3 +113,4 @@ func split(line: String) -> [String]? {
     splitLine!.append(temp)
     return splitLine
 }
+

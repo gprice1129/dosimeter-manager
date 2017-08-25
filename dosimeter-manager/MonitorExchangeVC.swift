@@ -26,9 +26,9 @@ class MonitorExchangeVC: MonitorDisplayVC {
         } else {
             let facility = newEntity[DataProperty.facility]
             let facilityNumber = newEntity[DataProperty.facilityNumber]
-            let location = newEntity[DataProperty.location] ?? "Unknown"
-            let tag = newEntity[DataProperty.tag] ?? "Unknown"
-            if (facility! == "Unknown" || facilityNumber! == "NONE") {
+            let location = newEntity[DataProperty.location] ?? DataProperty.placeholder
+            let tag = newEntity[DataProperty.tag] ?? DataProperty.placeholder
+            if (facility! == DataProperty.placeholder || facilityNumber! == DataProperty.placeholder) {
                 self.facility.text = facility!
             } else {
                 self.facility.text = "\(facility!) \(facilityNumber!)"

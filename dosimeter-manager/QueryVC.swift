@@ -15,6 +15,7 @@ class QueryVC: UIViewController {
     
     struct EntityNames {
         static let areaMonitor: String = "AreaMonitor"
+        static let period: String = "Period"
     }
     
     enum QueryError: Error {
@@ -97,8 +98,13 @@ class QueryVC: UIViewController {
             }
             areaMonitor.setValue(value, forKeyPath: propertyKey)
         }
-        try managedContext.save()
+        try saveMonitor(areaMonitor: areaMonitor)
         return areaMonitor
+    }
+    
+    func saveMonitor(areaMonitor: NSManagedObject) throws {
+        areaMonitor.setValue(true, forKey: DataProperty.modified)
+        try areaMonitor.managedObjectContext?.save()
     }
     
     override func viewDidLoad() {

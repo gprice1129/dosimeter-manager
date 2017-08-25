@@ -9,32 +9,20 @@
 import UIKit
 import CoreData
 
-class DataDisplayVC: QueryVC {
+class DataDisplayVC: FileManagerVC {
 
     @IBOutlet weak var userUpdateLabel: UILabel!
-    @IBOutlet weak var dosimeterDisplay: UITableView!
     
-    let address: String = "https://www.slac.stanford.edu/~xiaosj/scanner/scan_test.csv"
-    let localDirectory: String = "dosimeter-manager/"
     let fileName: String = "test.csv"
-    var dosimeters: [NSManagedObject] = []
     var propertyFilter: String?
     
-
-
     override func viewDidLoad() {
         super.viewDidLoad()
-        dosimeterDisplay.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
     }
     
     override func viewWillAppear(_ animated: Bool) {
         // Attempt to load core data on startup
         super.viewWillAppear(animated)
-        do {
-            self.dosimeters = try query(withKey: DataProperty.oldCode, withValue: propertyFilter)
-        } catch {
-            self.updateUser(userUpdate: "Could not fetch from database")
-        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -47,7 +35,7 @@ class DataDisplayVC: QueryVC {
         // Dispose of any resources that can be recreated.
     }
 
-    func downloadOldData() {
+    func importRemote() {
         // Fetch the file from a static URL to download.
         // Note that right now this is extremely unsafe because the app can access any HTML site (see Info.plist)
         
@@ -56,29 +44,32 @@ class DataDisplayVC: QueryVC {
         let documentsUrl: URL = FileManager.default.urls(for: .documentDirectory,
                                                    in: .userDomainMask).first as URL!
         let destinationUrl = documentsUrl.appendingPathComponent(fileName)
-        let fileUrl = URL(string: address)
+        let fileUrl = Addresses.importURL
         let session = URLSession(configuration: URLSessionConfiguration.default)
         let request = URLRequest(url: fileUrl!)
-        self.updateUser(userUpdate: "Hold on, downloading the file now...")
         let task = session.downloadTask(with: request) {
             (tempLocalUrl, response, error) in
             guard let tempLocalUrl = tempLocalUrl,
                  error == nil,
-                 let statusCode = (response as? HTTPURLResponse)?.statusCode else {
-                    self.updateUser(userUpdate: "Error downloading the file")
+                 let _ = (response as? HTTPURLResponse)?.statusCode else {
+                    //self.updateUser(userUpdate: "Error downloading the file")
                     return
             }
-            
-            self.updateUser(userUpdate: "Success! Status code: \(statusCode)")
-            
+
             do {
                 try FileManager.default.copyItem(at: tempLocalUrl, to: destinationUrl)
             } catch {
-                self.updateUser(userUpdate: "Error copying file")
+                self.updateUser(userUpdate: "Error copying file", completionHandler: nil)
             }
         }
-        task.resume()
-        
+
+        do {
+            task.resume()
+            let _ = try generateCoreData()
+        } catch {
+            self.updateUser(userUpdate: "Error writing data to the phone", completionHandler: nil)
+            return
+        }
     }
     
     func deleteOldData() {
@@ -87,34 +78,16 @@ class DataDisplayVC: QueryVC {
         let destinationFileUrl = documentsUrl.appendingPathComponent(fileName)
         do {
             try FileManager.default.removeItem(at: destinationFileUrl)
-            self.updateUser(userUpdate: "Successfully deleted file")
+            self.updateUser(userUpdate: "Successfully deleted file", completionHandler: nil)
         } catch {
-            self.updateUser(userUpdate: "Error deleteing file")
+            self.updateUser(userUpdate: "Error deleteing file", completionHandler: nil)
         }
         purgeCoreData()
-        self.dosimeterDisplay.reloadData()
     }
     
-    func purgeCoreData() {
-        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
-            return
-        }
-        
-        let managedContext = appDelegate.persistentContainer.viewContext
-        
-        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: EntityNames.areaMonitor)
-        let request = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-        
-        do {
-            try managedContext.execute(request)
-            try managedContext.save()
-            self.dosimeters = []
-        } catch {
-            print("Error deleting core data")
-        }
-    }
     
-    func generateCoreData() -> Bool {
+    
+    func generateCoreData() throws -> Bool {
         // Attemps to save an old data file to core data
         //
         // :no params:
@@ -123,15 +96,18 @@ class DataDisplayVC: QueryVC {
         
         guard let oldData = self.readOldData() else {
             // TODO: Alert the user to verify that the old data has been downloaded
-            print("The old data was not found")
+            //self.updateUser(userUpdate: "There was an error while downloading the file, please ensure you are connected to the internet")
             return false
         }
         var entity: [String: String] = [:]
         let formatMapping: [Int: String] = getFormat(formatLine: oldData[0])
         for line in oldData.dropFirst() {
             guard let formatLine: [String] = format(line: line) else {
-                print("Malformed CSV file, no closing \" found")
+                //self.updateUser(userUpdate: "The file you are trying to import is malformed")
                 return false
+            }
+            if (formatLine[0] == "") {
+                continue
             }
             for key in formatMapping.keys {
                 if (key >= formatLine.count) {
@@ -154,12 +130,13 @@ class DataDisplayVC: QueryVC {
                     break
                 }
             }
-            self.saveData(entity: entity)
+            try self.saveData(entity: entity)
         }
+        self.setDeleteDate()
         return true
     }
     
-    func saveData(entity: [String: String]) {
+    func saveData(entity: [String: String]) throws {
         // Attempts to write a single value and key to core data
         //
         // :propertyValue: The value of the property you want to save
@@ -186,12 +163,8 @@ class DataDisplayVC: QueryVC {
             }
             areaMonitor.setValue(value, forKeyPath: propertyKey)
         }
-        do {
-            try managedContext.save()
-            self.dosimeters.append(areaMonitor)
-        } catch let error as NSError {
-            print("Could not save. \(error), \(error.userInfo)")
-        }
+        areaMonitor.setValue(false, forKey: DataProperty.modified)
+        try managedContext.save()
     }
     
     func readOldData() -> [String]? {
@@ -235,41 +208,46 @@ class DataDisplayVC: QueryVC {
         return format
     }
     
-    func updateUser(userUpdate: String) {
+    func updateUser(userUpdate: String, completionHandler: (() -> Void)?) {
+        let group = DispatchGroup()
+        group.enter()
         DispatchQueue.main.async {
             self.userUpdateLabel.text = userUpdate
+            group.leave()
+        }
+        group.notify(queue: .main) {
+            if (completionHandler != nil) {
+                completionHandler!()
+            }
         }
     }
     
-    @IBAction func didPressDownload(_ sender: Any) {
-        downloadOldData()
+    @IBAction func didPressImportLocal(_ sender: Any) {
+        // This is currently not used. Later you can use this to import data locally
     }
     
-    @IBAction func didPressDelete(_ sender: Any) {
-        deleteOldData()
-    }
-    
-    @IBAction func didPressLoad(_ sender: Any) {
-        if (self.generateCoreData()) {
-            // Load it to the tableView
-            self.updateUser(userUpdate: "Data loaded successfully")
-            self.dosimeterDisplay.reloadData()
-        } else {
-            self.updateUser(userUpdate: "There was an error while loading the data")
-        }
+    @IBAction func didPressImportRemote(_ sender: Any) {
+        generateWarning(title: "Are you sure you want to import?",
+                    message: "Importing will overwrite the master file. Are you sure you want to import?",
+                    continueMsg: "Import Now", cancelMsg: "Cancel",
+                    continueAction: {action in
+                        self.updateUser(userUpdate: "Importing now... Please wait") {
+                            do {
+                                let areaMonitors = try self.query(withKVPs: nil, fetchRetired: true)
+                                if (!areaMonitors.isEmpty) {
+                                    self.backupData()
+                                    self.purgeCoreData()
+                                }
+                                self.importRemote()
+                                self.updateUser(userUpdate: "Data loaded successfully", completionHandler: nil)
+                            } catch {
+                                self.updateUser(userUpdate: "An unknown error occured", completionHandler: nil)
+                            }
+                        }
+                    },
+                    cancelAction: {action in
+                        return
+        })
     }
 }
 
-extension DataDisplayVC: UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.dosimeters.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let dosimeter = self.dosimeters[indexPath.row]
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let facility: String = dosimeter.value(forKeyPath: DataProperty.oldCode) as? String ?? "None"
-        cell.textLabel?.text = "\(facility)"
-        return cell
-    }
-}

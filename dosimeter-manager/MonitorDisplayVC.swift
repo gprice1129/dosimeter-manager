@@ -27,7 +27,7 @@ class MonitorDisplayVC: QueryModeVC {
             return
         }
         for key in labelProperties.keys {
-            let value = areaMonitor.value(forKey: key) as? String ?? "N/A"
+            let value = areaMonitor.value(forKey: key) as? String ?? DataProperty.placeholder
             labelProperties[key]!.text = value
         }
     }

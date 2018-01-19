@@ -55,9 +55,9 @@ class ExportVC: FileManagerVC {
     @IBAction func didPressExport(_ sender: Any) {
         do {
             let exportData = try query(withKVPs: nil, fetchRetired: true)
-            let (fileURL, _) = try exportToCSV(areaMonitors: exportData)
+            let (fileURL, filename) = try exportToCSV(areaMonitors: exportData)
             let fileData = NSData(contentsOf: fileURL)
-            sendEmail(to: [Remote.email], subject: "test", body: "test", attachmentHandle: nil, attachmentData: fileData as Data?)
+            sendEmail(to: [Remote.email], subject: "test", body: "test", attachmentHandle: filename, attachmentData: fileData as Data?)
         } catch let error as NSError {
             print("\(error), \(error.userInfo)")
             return

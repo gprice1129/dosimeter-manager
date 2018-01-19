@@ -30,21 +30,21 @@ class FileManagerVC: QueryVC, MFMailComposeViewControllerDelegate {
     }
     
     struct Remote {
-        static let email = "gprice1129@gmail.com"
+        static let email = "xiaosj@slac.stanford.edu"
     }
     
     struct Addresses {
-        static let importURL = URL(string: "https://www.slac.stanford.edu/~xiaosj/scanner/scan_test.csv")
+        static let importURL = URL(string: "https://www.slac.stanford.edu/~xiaosj/scanner/dosimeters_last-period.csv")
         static let localDirectory = "dosimeter-manager/"
         static let backupDirectory = "dosimeter-manager/backup"
     }
     
     func exportToCSV(areaMonitors: [NSManagedObject]) throws -> (URL, String) {
         func areaMonitorToString(areaMonitor: NSManagedObject) throws -> String {
-            guard let isModified = areaMonitor.value(forKey: DataProperty.modified) as? Bool else {
-                print("Fatal error: Data is corrupted")
-                throw exportError.corruptData
-            }
+//            guard let isModified = areaMonitor.value(forKey: DataProperty.modified) as? Bool else {
+//                print("Fatal error: Data is corrupted")
+//                throw exportError.corruptData
+//            }
             //if (!isModified) {
             //    throw exportError.unmodified
             //}
@@ -52,7 +52,8 @@ class FileManagerVC: QueryVC, MFMailComposeViewControllerDelegate {
                                       DataProperty.placementDate, DataProperty.pickupDate, DataProperty.newCode]
             let dateFormatter = DateFormatter()
             dateFormatter.locale = Locale(identifier: "en_US")
-            dateFormatter.setLocalizedDateFormatFromTemplate("dd-MMM-yy")
+//            dateFormatter.setLocalizedDateFormatFromTemplate("dd-MMM-yy")
+            dateFormatter.dateFormat = "dd-MMM-yy"
             var properties = normalPropertyKeys.map({ (key: String) -> String in
                 let property = areaMonitor.value(forKey: key)
                 if (property == nil) {
@@ -120,6 +121,9 @@ class FileManagerVC: QueryVC, MFMailComposeViewControllerDelegate {
 
     func sendEmail(to recipients: [String], subject: String?, body: String?, attachmentHandle: String?, attachmentData: Data?) {
         if (!MFMailComposeViewController.canSendMail()) {
+            let alertController = UIAlertController(title: "Error", message: "Cannot send email", preferredStyle: UIAlertControllerStyle.alert)
+            alertController.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.cancel, handler: nil))
+            self.present(alertController, animated: true, completion: nil)
             return
         }
         let composeVC = MFMailComposeViewController()
@@ -138,7 +142,7 @@ class FileManagerVC: QueryVC, MFMailComposeViewControllerDelegate {
         if (attachmentData != nil) {
             var attachmentHandle = attachmentHandle
             if (attachmentHandle == nil) {
-                attachmentHandle = "test.csv"
+                attachmentHandle = "monitor.csv"
             }
             composeVC.addAttachmentData(attachmentData!, mimeType: "text/csv", fileName: attachmentHandle!)
         }
